@@ -1,0 +1,24 @@
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.whereisanton.www.whereisanton.LocationActivity">
+    
+    <fragment
+        xmlns:map="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+         />
+
+    <Button
+        android:text="Publish"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:padding="4dp"
+        android:id="@+id/button"
+        android:onClick="onClick"/>
+</FrameLayout>
