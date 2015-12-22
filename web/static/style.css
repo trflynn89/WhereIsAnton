@@ -18,6 +18,7 @@ body {
     font-family: Ubuntu, sans-serif;
     margin: 0;
     overflow: hidden;
+    white-space: nowrap;
 }
 
 a {
@@ -91,26 +92,77 @@ a {
     display: none;
 }
 
-#main-nav:target {
-    min-width: 200px;
-    width: 20%;
+@media only screen and (max-width: 560px) {
+    h2 {
+        padding-left: 50px;
+    }
+
+    #main-nav:target {
+        width: 50%;
+    }
+
+    #main-nav:target + .page-wrap {
+        width: 50%;
+    }
+
+    #main-nav:target + .page-wrap .open-menu {
+        display: none;
+    }
+
+    #main-nav:target + .page-wrap .close-menu {
+        display: block;
+    }
+
+    #main-nav:target + .page-wrap .main-header {
+        width: 50%;
+        left: 50%;
+    }
 }
 
-#main-nav:target + .page-wrap {
-    width: 80%;
+@media only screen and (min-width: 560px) and (max-width: 1080px) {
+    #main-nav:target {
+        width: 30%;
+    }
+
+    #main-nav:target + .page-wrap {
+        width: 70%;
+    }
+
+    #main-nav:target + .page-wrap .open-menu {
+        display: none;
+    }
+
+    #main-nav:target + .page-wrap .close-menu {
+        display: block;
+    }
+
+    #main-nav:target + .page-wrap .main-header {
+        width: 70%;
+        left: 30%;
+    }
 }
 
-#main-nav:target + .page-wrap .open-menu {
-    display: none;
-}
+@media only screen and (min-width: 1080px) {
+    #main-nav:target {
+        width: 15%;
+    }
 
-#main-nav:target + .page-wrap .close-menu {
-    display: block;
-}
+    #main-nav:target + .page-wrap {
+        width: 85%;
+    }
 
-#main-nav:target + .page-wrap .main-header {
-    width: 80%;
-    left: 20%;
+    #main-nav:target + .page-wrap .open-menu {
+        display: none;
+    }
+
+    #main-nav:target + .page-wrap .close-menu {
+        display: block;
+    }
+
+    #main-nav:target + .page-wrap .main-header {
+        width: 85%;
+        left: 15%;
+    }
 }
 
 #map {
