@@ -41,6 +41,7 @@ public class LocationActivity
     implements OnMapReadyCallback, LocationListener, OnClickListener
 {
     private static final String S_URL = "https://where-is-anton.appspot.com/locations/";
+    private static final String S_DRUNK = "https://where-is-anton.appspot.com/drunk/";
     private static final String S_TAG = "whereisanton";
 
     private GoogleMap m_map;
@@ -184,6 +185,17 @@ public class LocationActivity
         );
     }
 
+    public void onDrunk(View v)
+    {
+        Log.w(S_TAG, "!!!!!!!! drunk");
+        new DrunkTask().execute("1");
+    }
+
+    public void onSober(View v) {
+        Log.w(S_TAG, "!!!!!!! sober");
+        new DrunkTask().execute("0");
+    }
+
     private class PostTask extends AsyncTask<String, String, Integer>
     {
         protected Integer doInBackground(String... data)
@@ -216,51 +228,90 @@ public class LocationActivity
         @Override
         protected void onPostExecute(Integer result)
         {
-            Context context = getApplicationContext();
-            int length = Toast.LENGTH_LONG;
-
-            Toast toast;
-
-            if (result == HttpURLConnection.HTTP_OK)
-            {
-                toast = Toast.makeText(context, "Location update sent", length);
-            }
-            else
-            {
-                toast = Toast.makeText(context, "Error sending update, try again", length);
-            }
-
-            toast.show();
+            onResponse(result);
         }
+    }
 
-        private int makeHttpPost(URL url, Map<String, String> params) throws Exception
+    private class DrunkTask extends AsyncTask<String, String, Integer>
+    {
+        protected Integer doInBackground(String... data)
         {
-            StringBuilder postData = new StringBuilder();
-            for (Map.Entry<String, String> param : params.entrySet())
-            {
-                if (postData.length() != 0)
-                {
-                    postData.append('&');
-                }
+            Log.i(S_TAG, "Updating to: " + data[0]);
+            final int maxTries = 10;
 
-                postData.append(URLEncoder.encode(param.getKey(), "UTF-8"));
-                postData.append('=');
-                postData.append(URLEncoder.encode(param.getValue(), "UTF-8"));
+            for (int i = 0; i < maxTries; ++i)
+            {
+                try
+                {
+                    URL url = new URL(S_DRUNK);
+
+                    Map<String, String> params = new LinkedHashMap<String, String>();
+                    params.put("drunk", data[0]);
+
+                    return makeHttpPost(url, params);
+                }
+                catch (Exception e)
+                {
+                    Log.e(S_TAG, e.getMessage());
+                }
             }
 
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            byte[] bytes = postData.toString().getBytes("UTF-8");
-
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            conn.setRequestProperty("Content-Length", String.valueOf(bytes.length));
-            conn.setDoOutput(true);
-            conn.getOutputStream().write(bytes);
-
-            Log.i(S_TAG, "Response code: " + conn.getResponseCode());
-            Log.i(S_TAG, "Response text: " + conn.getResponseMessage());
-
-            return conn.getResponseCode();
+            return -1;
         }
+
+        @Override
+        protected void onPostExecute(Integer result)
+        {
+            onResponse(result);
+        }
+    }
+
+    protected void onResponse(Integer result)
+    {
+        Context context = getApplicationContext();
+        int length = Toast.LENGTH_LONG;
+
+        Toast toast;
+
+        if (result == HttpURLConnection.HTTP_OK)
+        {
+            toast = Toast.makeText(context, "Location update sent", length);
+        }
+        else
+        {
+            toast = Toast.makeText(context, "Error sending update, try again", length);
+        }
+
+        toast.show();
+    }
+
+    protected int makeHttpPost(URL url, Map<String, String> params) throws Exception
+    {
+        StringBuilder postData = new StringBuilder();
+        for (Map.Entry<String, String> param : params.entrySet())
+        {
+            if (postData.length() != 0)
+            {
+                postData.append('&');
+            }
+
+            postData.append(URLEncoder.encode(param.getKey(), "UTF-8"));
+            postData.append('=');
+            postData.append(URLEncoder.encode(param.getValue(), "UTF-8"));
+        }
+
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        byte[] bytes = postData.toString().getBytes("UTF-8");
+
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        conn.setRequestProperty("Content-Length", String.valueOf(bytes.length));
+        conn.setDoOutput(true);
+        conn.getOutputStream().write(bytes);
+
+        Log.i(S_TAG, "Response code: " + conn.getResponseCode());
+        Log.i(S_TAG, "Response text: " + conn.getResponseMessage());
+
+        return conn.getResponseCode();
     }
 }

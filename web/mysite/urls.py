@@ -32,9 +32,11 @@ from django.contrib import admin
 from django.views.decorators.csrf import csrf_exempt
 
 from anton.views import Anton
+from drunk.views import Drunk
 from locations.views import Locations
 
 urlpatterns = [
     url(r'^$', Anton.as_view()),
+    url(r'^drunk/$', csrf_exempt(Drunk.as_view())),
     url(r'^locations/$', csrf_exempt(Locations.as_view())),
 ]
