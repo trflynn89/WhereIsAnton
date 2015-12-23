@@ -28,18 +28,22 @@
 
         <div class="content">
         <center>
-        <br />
-        <br />
-        <br />
-        {% if drunk == True %}
-            {% if hours > 1 %}
-                <p>Yes! Anton has been drunk for about {{ hours }} hours!</p>
+            <br />
+            <br />
+            <br />
+            {% if drunk == True %}
+                {% if hours == 1 %}
+                    <p>Yes! Anton has been drunk for about {{ hours }} hour :)</p>
+                {% else %}
+                    <p>Yes! Anton has been drunk for about {{ hours }} hours :)</p>
+                {% endif %}
             {% else %}
-                <p>Yes! Anton has been drunk for about {{ hours }} hour!</p>
+                {% if hours == 1 %}
+                    <p>Nope! It has been {{ hours }} hour since Anton has been drunk :(</p>
+                {% else %}
+                    <p>Nope! It has been {{ hours }} hours since Anton has been drunk :(</p>
+                {% endif %}
             {% endif %}
-        {% else %}
-            <p>No, Anton is not drunk.</p>
-        {% endif %}
         </center>
         </div>
     </div>

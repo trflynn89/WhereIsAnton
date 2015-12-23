@@ -16,13 +16,18 @@ class Drunk(View):
         isDrunk = last.drunk if last else False
         hours = 0
 
-        if isDrunk:
+        if last:
             diff = timezone.now() - last.time
             hours = diff.total_seconds() / 60 / 60
             hours = int(math.ceil(hours))
 
-        if hours > 14:
+        if isDrunk and (hours > 14):
+            Drunks(
+                drunk=False
+            ).put()
+
             isDrunk = False
+            hours = 0
 
         return render_to_response('drunk.html',
             {
