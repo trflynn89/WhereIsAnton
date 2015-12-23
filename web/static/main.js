@@ -45,13 +45,15 @@ function addLocations(locations)
 
     if (s_showAll)
     {
-        s_map.setCenter(new google.maps.LatLng(0, 0));
-        s_map.setZoom(2);
+        var bounds = new google.maps.LatLngBounds();
 
         for (var i = 0; i < locations.length; ++i)
         {
-            addMarker(locations[i]);
+            var latlng = addMarker(locations[i]);
+            bounds.extend(latlng);
         }
+
+        s_map.fitBounds(bounds);
     }
     else
     {
@@ -67,7 +69,7 @@ function addLocations(locations)
 
 function addMarker(location)
 {
-    var latlng = { lat: location['latitude'], lng: location['longitude'] };
+    var latlng = new google.maps.LatLng(location['latitude'], location['longitude']);
 
     var marker = new google.maps.Marker(
     {
@@ -77,6 +79,8 @@ function addMarker(location)
 
     labelMarker(marker, location['address']);
     s_markers.push(marker);
+
+    return latlng;
 }
 
 function clearMarkers()
