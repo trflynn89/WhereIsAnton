@@ -69,9 +69,7 @@ public class LocationActivity
     {
         super.onPause();
 
-        int perm = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
-
-        if ((perm == PackageManager.PERMISSION_GRANTED) && (m_manager != null))
+        if (m_manager != null)
         {
             Log.i(S_TAG, "Stopping location updates");
             m_manager.removeUpdates(this);
@@ -83,9 +81,7 @@ public class LocationActivity
     {
         super.onResume();
 
-        int perm = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
-
-        if ((perm == PackageManager.PERMISSION_GRANTED) && (m_manager != null))
+        if (m_manager != null)
         {
             Log.i(S_TAG, "Resuming location updates");
             m_manager.requestLocationUpdates(m_provider, 20000, 0.0f, this);
@@ -96,22 +92,19 @@ public class LocationActivity
     public void onMapReady(GoogleMap googleMap)
     {
         m_button = (Button) findViewById(R.id.button);
+
         m_map = googleMap;
+        m_map.setMyLocationEnabled(true);
 
-        int perm = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+        m_manager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        Criteria criteria = new Criteria();
 
-        if (perm == PackageManager.PERMISSION_GRANTED)
-        {
-            m_manager = (LocationManager) getSystemService(LOCATION_SERVICE);
-            Criteria criteria = new Criteria();
+        m_provider = m_manager.getBestProvider(criteria, true);
 
-            m_provider = m_manager.getBestProvider(criteria, true);
+        Location location = m_manager.getLastKnownLocation(m_provider);
+        onLocationChanged(location);
 
-            Location location = m_manager.getLastKnownLocation(m_provider);
-            onLocationChanged(location);
-
-            m_manager.requestLocationUpdates(m_provider, 20000, 0.0f, this);
-        }
+        m_manager.requestLocationUpdates(m_provider, 20000, 0.0f, this);
     }
 
     @Override
@@ -204,7 +197,7 @@ public class LocationActivity
                 {
                     URL url = new URL(S_URL);
 
-                    Map<String, String> params = new LinkedHashMap<>();
+                    Map<String, String> params = new LinkedHashMap<String, String>();
                     params.put("address", data[0]);
                     params.put("latitude", data[1]);
                     params.put("longitude", data[2]);
