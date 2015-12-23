@@ -117,10 +117,10 @@ public class LocationActivity
     @Override
     public void onLocationChanged(Location location)
     {
-        Log.i(S_TAG, "Location changed to: " + location.toString());
-
-        if (m_map != null)
+        if ((location != null) && (m_map != null))
         {
+            Log.i(S_TAG, "Location changed to: " + location.toString());
+
             Geocoder coder = new Geocoder(this, Locale.getDefault());
             m_lastLocation = location;
 
