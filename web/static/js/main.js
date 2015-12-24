@@ -4,7 +4,7 @@ var s_markers = [];
 var s_showAll = false;
 var s_drunkTimeout = 10;
 
-var MILLIS_PER_HOUR = 1000 * 60 * 60
+var MILLIS_PER_HOUR = 1000 * 60 * 60;
 
 $(document).ready(function(event)
 {

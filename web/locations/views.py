@@ -2,8 +2,6 @@ import json
 
 from django.http import HttpResponse
 from django.http import HttpResponseBadRequest
-from django.shortcuts import render_to_response
-from django.template import RequestContext
 from django.views.generic import View
 
 from models import Location
@@ -17,7 +15,7 @@ class Locations(View):
             for loc in Location.GetAllLocations():
                 location = dict()
 
-                location['time'] = str(loc.time)
+                location['time'] = loc.time.isoformat()
                 location['address'] = loc.address
                 location['latitude'] = loc.latitude
                 location['longitude'] = loc.longitude
@@ -31,8 +29,6 @@ class Locations(View):
             content_type='application/json')
 
     def post(self, request, *args, **kwargs):
-        locations = Location.GetAllLocations()
-
         address = request.POST.get('address')
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
@@ -41,7 +37,7 @@ class Locations(View):
             return HttpResponseBadRequest()
 
         # Delete duplicate addresses
-        for location in locations:
+        for location in Location.GetAllLocations():
             if address == location.address:
                 location.delete()
 

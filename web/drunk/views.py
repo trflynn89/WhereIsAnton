@@ -29,27 +29,21 @@ class Drunk(View):
 
     def post(self, request, *args, **kwargs):
         time = request.POST.get('time')
-        isDrunk = request.POST.get('drunk')
+        drunk = request.POST.get('drunk')
 
-        if not isDrunk:
+        if not drunk:
             return HttpResponseBadRequest()
 
-        isDrunk = (isDrunk == 1) or (isDrunk == '1')
-        drunk = Drunks.GetLastDrunk()
+        isDrunk = (drunk == 1) or (drunk == '1')
+        last = Drunks.GetLastDrunk()
 
-        if drunk:
-            if drunk.drunk and isDrunk:
-                return HttpResponseBadRequest()
-            if not drunk.drunk and not isDrunk:
-                return HttpResponseBadRequest()
+        if last and (last.drunk == isDrunk):
+            return HttpResponseBadRequest()
 
         if time:
-            time = float(time) / 1000.0
-            time = datetime.datetime.fromtimestamp(time)
-
             Drunks(
-                time=time,
-                drunk = isDrunk
+                time=self._convertEpoch(time),
+                drunk=isDrunk
             ).put()
         else:
             Drunks(
@@ -57,3 +51,6 @@ class Drunk(View):
             ).put()
 
         return HttpResponse()
+
+    def _convertEpoch(time):
+        return datetime.datetime.fromtimestamp(float(time) / 1000.0)
