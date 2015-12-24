@@ -140,11 +140,12 @@ function showDrunks(drunks)
     }
 
     var answer = (isDrunk ? 'Yes!' : 'Nope!');
+    var status = (isDrunk ? ' drunk ' : ' sober ');
     var units = (hours == 1 ? ' hour' : ' hours');
     var smile = (isDrunk ? ' :)' : ' :(');
     var type = (isDrunk ? 'info' : 'error');
 
-    var msg = ' Anton has been drunk for ' + hours + units + smile;
+    var msg = ' Anton has been' + status + 'for ' + hours + units + smile;
 
     Lobibox.alert(type,
     {
