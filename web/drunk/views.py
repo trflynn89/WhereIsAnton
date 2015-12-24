@@ -1,9 +1,8 @@
-import math
+import datetime
+import json
 
 from django.http import HttpResponse
 from django.http import HttpResponseBadRequest
-from django.shortcuts import render_to_response
-from django.utils import timezone
 from django.views.generic import View
 
 from models import Drunks
@@ -11,31 +10,25 @@ from models import Drunks
 class Drunk(View):
 
     def get(self, request, *args, **kwargs):
-        last = Drunks.GetLastDrunk()
+        drunks = list()
 
-        isDrunk = last.drunk if last else False
-        hours = 0
+        try:
+            for d in Drunks.GetAllDrunks():
+                drunk = dict()
 
-        if last:
-            diff = timezone.now() - last.time
-            hours = diff.total_seconds() / 60 / 60
-            hours = int(math.ceil(hours))
+                drunk['time'] = d.time.isoformat()
+                drunk['drunk'] = d.drunk
 
-        if isDrunk and (hours > 14):
-            Drunks(
-                drunk=False
-            ).put()
+                drunks.append(drunk)
+        except:
+            pass
 
-            isDrunk = False
-            hours = 0
-
-        return render_to_response('drunk.html',
-            {
-                'drunk': isDrunk,
-                'hours': hours
-            });
+        return HttpResponse(
+            json.dumps({ 'drunks': drunks }),
+            content_type='application/json')
 
     def post(self, request, *args, **kwargs):
+        time = request.POST.get('time')
         isDrunk = request.POST.get('drunk')
 
         if not isDrunk:
@@ -50,8 +43,17 @@ class Drunk(View):
             if not drunk.drunk and not isDrunk:
                 return HttpResponseBadRequest()
 
-        Drunks(
-            drunk=isDrunk
-        ).put()
+        if time:
+            time = float(time) / 1000.0
+            time = datetime.datetime.fromtimestamp(time)
+
+            Drunks(
+                time=time,
+                drunk = isDrunk
+            ).put()
+        else:
+            Drunks(
+                drunk=isDrunk
+            ).put()
 
         return HttpResponse()

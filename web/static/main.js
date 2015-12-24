@@ -2,6 +2,9 @@ var s_map;
 var s_path;
 var s_markers = [];
 var s_showAll = false;
+var s_drunkTimeout = 10;
+
+var MILLIS_PER_HOUR = 1000 * 60 * 60
 
 $(document).ready(function(event)
 {
@@ -19,9 +22,26 @@ $(document).ready(function(event)
 
 function getLocations()
 {
-    $.get('/locations', function(data)
+    $.get('/locations/', function(data)
     {
         addLocations(data.locations);
+    });
+}
+
+function getDrunks()
+{
+    $.get('/drunk/', function(data)
+    {
+        showDrunks(data.drunks);
+    });
+}
+
+function createDrunk(time, isDrunk)
+{
+    $.post('/drunk/',
+    {
+        time: time,
+        drunk: isDrunk
     });
 }
 
@@ -86,6 +106,53 @@ function addLocations(locations)
     }
 }
 
+function showDrunks(drunks)
+{
+    if (drunks.length == 0)
+    {
+        console.log('Nope! Anton has never been drunk :(');
+        return;
+    }
+
+    drunks.sort(function(a, b)
+    {
+        if (a['time'] == b['time'])
+            return 0;
+        if (a['time'] < b['time'])
+            return 1;
+        if (a['time'] > b['time'])
+            return -1;
+    });
+
+    var isDrunk = drunks[0]['drunk'];
+    var dTime = new Date(drunks[0]['time']).getTime();
+    var cTime = new Date().getTime();
+
+    var hours = Math.ceil((cTime - dTime) / MILLIS_PER_HOUR);
+
+    if (isDrunk && (hours > s_drunkTimeout))
+    {
+        sTime = dTime + (s_drunkTimeout * MILLIS_PER_HOUR);
+        createDrunk(sTime, false);
+
+        hours = Math.ceil((cTime - sTime) / MILLIS_PER_HOUR);
+        isDrunk = false;
+    }
+
+    var answer = (isDrunk ? 'Yes!' : 'Nope!');
+    var units = (hours == 1 ? ' hour' : ' hours');
+    var smile = (isDrunk ? ' :)' : ' :(');
+    var type = (isDrunk ? 'info' : 'error');
+
+    var msg = ' Anton has been drunk for ' + hours + units + smile;
+
+    Lobibox.alert(type,
+    {
+        title: answer,
+        msg: msg
+    });
+}
+
 function addMarker(location)
 {
     var latlng = new google.maps.LatLng(location['latitude'], location['longitude']);
@@ -127,4 +194,9 @@ function handleNavOption(showAll)
 {
     s_showAll = showAll;
     getLocations();
+}
+
+function showDrunkStatus()
+{
+    getDrunks();
 }
