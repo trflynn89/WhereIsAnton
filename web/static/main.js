@@ -1,4 +1,5 @@
 var s_map;
+var s_path;
 var s_markers = [];
 var s_showAll = false;
 
@@ -43,17 +44,35 @@ function addLocations(locations)
 
     clearMarkers();
 
+    if ((s_path !== undefined) && (s_path != null))
+    {
+        s_path.setMap(null);
+        s_path = null;
+    }
+
     if (s_showAll)
     {
         var bounds = new google.maps.LatLngBounds();
+        var coords = [];
 
         for (var i = 0; i < locations.length; ++i)
         {
             var latlng = addMarker(locations[i]);
             bounds.extend(latlng);
+            coords.push(latlng);
         }
 
         s_map.fitBounds(bounds);
+
+        s_path = new google.maps.Polyline({
+            path: coords,
+            geodesic: true,
+            strokeColor: '#ff0000',
+            stokeOpacity: 0.85,
+            strokeWeight: 2
+        });
+
+        s_path.setMap(s_map);
     }
     else
     {

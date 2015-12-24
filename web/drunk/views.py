@@ -42,12 +42,12 @@ class Drunk(View):
             return HttpResponseBadRequest()
 
         isDrunk = (isDrunk == 1) or (isDrunk == '1')
-        drunks = Drunks.GetAllDrunks()
+        drunk = Drunks.GetLastDrunk()
 
-        if drunks:
-            if drunks[0].drunk and isDrunk:
+        if drunk:
+            if drunk.drunk and isDrunk:
                 return HttpResponseBadRequest()
-            if not drunks[0].drunk and not isDrunk:
+            if not drunk.drunk and not isDrunk:
                 return HttpResponseBadRequest()
 
         Drunks(

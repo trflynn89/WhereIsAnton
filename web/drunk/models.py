@@ -6,11 +6,6 @@ class Drunks(db.Model):
     drunk = db.BooleanProperty()
 
     @staticmethod
-    def GetAllDrunks():
-        query = db.GqlQuery('SELECT * FROM Drunks ORDER BY time DESC')
-        return query.fetch(None)
-
-    @staticmethod
     def GetLastDrunk():
         query = db.GqlQuery('SELECT * FROM Drunks ORDER BY time DESC')
         return query.get()
