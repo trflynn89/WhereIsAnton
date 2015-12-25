@@ -51,6 +51,16 @@ function createDrunk(time, isDrunk)
     });
 }
 
+function timeComparator(a, b)
+{
+    if (a['time'] == b['time'])
+        return 0;
+    if (a['time'] < b['time'])
+        return 1;
+    if (a['time'] > b['time'])
+        return -1;
+}
+
 function addLocations(locations)
 {
     if (locations.length == 0)
@@ -58,16 +68,7 @@ function addLocations(locations)
         return;
     }
 
-    locations.sort(function(a, b)
-    {
-        if (a['time'] == b['time'])
-            return 0;
-        if (a['time'] < b['time'])
-            return 1;
-        if (a['time'] > b['time'])
-            return -1;
-    });
-
+    locations.sort(timeComparator);
     clearMarkers();
 
     if ((s_path !== undefined) && (s_path != null))
@@ -88,8 +89,6 @@ function addLocations(locations)
             coords.push(latlng);
         }
 
-        s_map.fitBounds(bounds);
-
         s_path = new google.maps.Polyline({
             path: coords,
             geodesic: true,
@@ -98,6 +97,7 @@ function addLocations(locations)
             strokeWeight: 2
         });
 
+        s_map.fitBounds(bounds);
         s_path.setMap(s_map);
     }
     else
@@ -116,19 +116,16 @@ function showDrunks(drunks)
 {
     if (drunks.length == 0)
     {
-        console.log('Nope! Anton has never been drunk :(');
+        Lobibox.alert('error',
+        {
+            title: 'Nope!',
+            msg: 'Anton has never been drunk :('
+        });
+
         return;
     }
 
-    drunks.sort(function(a, b)
-    {
-        if (a['time'] == b['time'])
-            return 0;
-        if (a['time'] < b['time'])
-            return 1;
-        if (a['time'] > b['time'])
-            return -1;
-    });
+    drunks.sort(timeComparator);
 
     var isDrunk = drunks[0]['drunk'];
     var dTime = new Date(drunks[0]['time']).getTime();
