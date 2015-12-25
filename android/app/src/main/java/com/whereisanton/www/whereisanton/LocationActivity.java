@@ -1,8 +1,6 @@
 package com.whereisanton.www.whereisanton;
 
-import android.Manifest;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
@@ -10,7 +8,6 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -51,7 +48,7 @@ public class LocationActivity
     private String m_provider;
 
     private Location m_lastLocation = null;
-    private String m_lastAddress = "";
+    private String m_lastAddress = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -111,6 +108,9 @@ public class LocationActivity
     @Override
     public void onLocationChanged(Location location)
     {
+        m_lastLocation = null;
+        m_lastAddress = null;
+
         if ((location != null) && (m_map != null))
         {
             Log.i(S_TAG, "Location changed to: " + location.toString());
@@ -128,12 +128,24 @@ public class LocationActivity
 
                 String state = addresses.get(0).getAddressLine(1);
                 String country = addresses.get(0).getAddressLine(2);
-                m_lastAddress = state + ", " + country;
+
+                if (state == null)
+                {
+                    m_lastAddress = addresses.get(0).getAddressLine(0);
+                }
+                else if (country == null)
+                {
+                    m_lastAddress = state;
+                }
+                else
+                {
+                    m_lastAddress = state + ", " + country;
+                }
             }
             catch (IOException e)
             {
                 Log.e(S_TAG, e.getMessage());
-                m_lastAddress = "";
+                m_lastAddress = null;
             }
 
             LatLng pos = new LatLng(m_lastLocation.getLatitude(), m_lastLocation.getLongitude());
@@ -145,7 +157,7 @@ public class LocationActivity
             m_button.setClickable(true);
 
             Marker marker = m_map.addMarker(new MarkerOptions().position(pos));
-            marker.setTitle(m_lastAddress);
+            marker.setTitle(m_lastAddress == null ? "Unknown" : m_lastAddress);
             marker.showInfoWindow();
         }
         else
@@ -175,14 +187,19 @@ public class LocationActivity
         if (m_lastLocation == null)
         {
             Log.w(S_TAG, "No location available");
-            return;
         }
-
-        new PostTask().execute(
-            m_lastAddress,
-            String.valueOf(m_lastLocation.getLatitude()),
-            String.valueOf(m_lastLocation.getLongitude())
-        );
+        else if (m_lastAddress == null)
+        {
+            Log.w(S_TAG, "No address available");
+        }
+        else
+        {
+            new PostTask().execute(
+                m_lastAddress,
+                String.valueOf(m_lastLocation.getLatitude()),
+                String.valueOf(m_lastLocation.getLongitude())
+            );
+        }
     }
 
     public void onDrunk(View v)
