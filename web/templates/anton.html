@@ -7,7 +7,7 @@
     <link rel="shortcut icon" type="image/png" href="/static/favicon.ico"/>
 
     <link type="text/css" rel="stylesheet" href="/static/css/lobibox.min.css"/>
-    <link type="text/css" rel="stylesheet" href="/static/css/style.min.css" />
+    <link type="text/css" rel="stylesheet" href="/static/css/style.min.css?ver={{ version }}" />
 </head>
 
 <body>
@@ -42,12 +42,14 @@
         <div class="content">
             <div id="map"></div>
         </div>
+
+        {{ environ|safe }}
     </div>
 
     <script type="text/javascript" src="/static/js/jquery.min.js"></script>
     <script type="text/javascript" src="/static/js/lobibox.min.js"></script>
     <script type="text/javascript" src="https://maps.google.com/maps/api/js?sensor=true"></script>
-    <script type="text/javascript" src="/static/js/main.min.js"></script>
+    <script type="text/javascript" src="/static/js/main.min.js?ver={{ version }}"></script>
 </body>
 
 </html>
