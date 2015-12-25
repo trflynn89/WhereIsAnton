@@ -207,16 +207,21 @@ nav:after {
 }
 
 @-webkit-keyframes loading {
-    0%, 40%, 100% { -webkit-transform: scaleY(0.4) }
-    20% { -webkit-transform: scaleY(1.0) }
+    0%, 40%, 100% {
+        -webkit-transform: scaleY(1.0)
+    }
+    20% {
+        -webkit-transform: scaleY(2.0)
+    }
 }
 
 @keyframes loading {
-  0%, 40%, 100% {
-    transform: scaleY(1.0);
-    -webkit-transform: scaleY(1.0);
-  }  20% {
-    transform: scaleY(2.0);
-    -webkit-transform: scaleY(2.0);
-  }
+    0%, 40%, 100% {
+        transform: scaleY(1.0);
+        -webkit-transform: scaleY(1.0);
+    }
+    20% {
+        transform: scaleY(2.0);
+        -webkit-transform: scaleY(2.0);
+    }
 }
