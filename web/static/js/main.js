@@ -22,17 +22,23 @@ $(document).ready(function(event)
 
 function getLocations()
 {
+    $('.spinner').children().addClass('loading');
+
     $.get('/locations/', function(data)
     {
         addLocations(data.locations);
+        $('.spinner').children().removeClass('loading');
     });
 }
 
 function getDrunks()
 {
+    $('.spinner').children().addClass('loading');
+
     $.get('/drunk/', function(data)
     {
         showDrunks(data.drunks);
+        $('.spinner').children().removeClass('loading');
     });
 }
 
