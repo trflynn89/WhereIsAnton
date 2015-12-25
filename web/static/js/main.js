@@ -22,23 +22,23 @@ $(document).ready(function(event)
 
 function getLocations()
 {
-    $('.spinner').children().addClass('loading');
+    $('.hamburger').children().addClass('loading');
 
     $.get('/locations/', function(data)
     {
         addLocations(data.locations);
-        $('.spinner').children().removeClass('loading');
+        $('.hamburger').children().removeClass('loading');
     });
 }
 
 function getDrunks()
 {
-    $('.spinner').children().addClass('loading');
+    $('.hamburger').children().addClass('loading');
 
     $.get('/drunk/', function(data)
     {
         showDrunks(data.drunks);
-        $('.spinner').children().removeClass('loading');
+        $('.hamburger').children().removeClass('loading');
     });
 }
 
@@ -106,7 +106,7 @@ function addLocations(locations)
         var lng = locations[0]['longitude'];
 
         s_map.setCenter(new google.maps.LatLng(lat, lng));
-        s_map.setZoom(5);
+        s_map.setZoom(8);
 
         addMarker(locations[0]);
     }

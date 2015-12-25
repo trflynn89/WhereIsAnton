@@ -11,28 +11,28 @@
 </head>
 
 <body>
-    <nav class="main-nav" id="main-nav">
+    <nav id="nav">
       <a href="/#" onclick="handleNavOption(false);">Current location</a>
       <a href="/#" onclick="handleNavOption(true);">All locations</a>
-      <a href="/#" onclick="showDrunkStatus();">Is Anton drunk?</a>
+      <a href="/#" onclick="showDrunkStatus();">Is he drunk?</a>
       <a href="https://facebook.com/sharer.php?u=https://where-is-anton.appspot.com/" target="_blank">Share on Facebook</a>
       <a href="http://timothy-flynn.com" target="_blank">Created by Tim Flynn</a>
     </nav>
 
-    <div class="page-wrap">
-        <header class="main-header">
-            <a href="#main-nav" class="open-menu">
-                <div class="spinner">
-                    <div id="rect1"></div>
-                    <div id="rect2"></div>
-                    <div id="rect3"></div>
+    <div class="body">
+        <header>
+            <a href="#nav" class="open">
+                <div class="hamburger">
+                    <div id="bar1"></div>
+                    <div id="bar2"></div>
+                    <div id="bar3"></div>
                 </div>
             </a>
-            <a href="#" class="close-menu">
-                <div class="spinner">
-                    <div id="rect1"></div>
-                    <div id="rect2"></div>
-                    <div id="rect3"></div>
+            <a href="#" class="close">
+                <div class="hamburger">
+                    <div id="bar1"></div>
+                    <div id="bar2"></div>
+                    <div id="bar3"></div>
                 </div>
             </a>
 
@@ -42,13 +42,11 @@
         <div class="content">
             <div id="map"></div>
         </div>
-
-        {{ environ|safe }}
     </div>
 
     <script type="text/javascript" src="/static/js/jquery.min.js"></script>
     <script type="text/javascript" src="/static/js/lobibox.min.js"></script>
-    <script type="text/javascript" src="https://maps.google.com/maps/api/js?sensor=true"></script>
+    <script type="text/javascript" src="https://maps.google.com/maps/api/js"></script>
     <script type="text/javascript" src="/static/js/main.min.js?ver={{ version }}"></script>
 </body>
 
