@@ -114,12 +114,14 @@ function addLocations(locations)
 
 function showDrunks(drunks)
 {
+    var name = getName();
+
     if (drunks.length == 0)
     {
         Lobibox.alert('error',
         {
             title: 'Nope!',
-            msg: 'Anton has never been drunk :('
+            msg: name + ' has never been drunk :('
         });
 
         return;
@@ -148,7 +150,7 @@ function showDrunks(drunks)
     var smile = (isDrunk ? ' :)' : ' :(');
     var type = (isDrunk ? 'info' : 'error');
 
-    var msg = ' Anton has been' + status + 'for ' + hours + units + smile;
+    var msg = name + ' has been' + status + 'for ' + hours + units + smile;
 
     Lobibox.alert(type,
     {
