@@ -9,12 +9,13 @@ class Home(View):
 
     def get(self, request, *args, **kwargs):
         url = self._formUrl()
+        version = self._getVersion();
 
         return render_to_response('home.html',
             {
                 'url': url,
                 'name': NAME,
-                'version': os.environ['CURRENT_VERSION_ID']
+                'version': version
             });
 
     def _formUrl(self):
@@ -24,6 +25,14 @@ class Home(View):
 
         if proto and host and uri:
             return  '%s://%s%s' % (proto, host, uri)
+
+        return None
+
+    def _getVersion(self):
+        version = self._getEnv('CURRENT_VERSION_ID')
+
+        if version:
+            return version.split('.')[0]
 
         return None
 

@@ -24,7 +24,7 @@ class Drunk(View):
             pass
 
         return HttpResponse(
-            json.dumps({ 'drunks': drunks }),
+            json.dumps({ 'data': drunks }),
             content_type='application/json')
 
     def post(self, request, *args, **kwargs):
@@ -52,5 +52,5 @@ class Drunk(View):
 
         return HttpResponse()
 
-    def _convertEpoch(time):
+    def _convertEpoch(self, time):
         return datetime.datetime.fromtimestamp(float(time) / 1000.0)

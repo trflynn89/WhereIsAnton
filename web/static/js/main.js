@@ -1,5 +1,5 @@
-var s_map;
-var s_path;
+var s_map = null;
+var s_path = null;
 var s_markers = [];
 var s_showAll = false;
 var s_drunkTimeout = 10;
@@ -17,34 +17,23 @@ $(document).ready(function(event)
         }
     );
 
-    getLocations();
+    getLocations(false);
 });
 
-function getLocations()
+function getLocations(showAll)
 {
-    $('.hamburger').children().addClass('loading');
-
-    $.get('/locations/', function(data)
-    {
-        addLocations(data.locations);
-        $('.hamburger').children().removeClass('loading');
-    });
+    s_showAll = showAll;
+    getAPI('/locations/', showLocations);
 }
 
 function getDrunks()
 {
-    $('.hamburger').children().addClass('loading');
-
-    $.get('/drunk/', function(data)
-    {
-        showDrunks(data.drunks);
-        $('.hamburger').children().removeClass('loading');
-    });
+    getAPI('/drunk/', showDrunks);
 }
 
 function createDrunk(time, isDrunk)
 {
-    $.post('/drunk/',
+    postAPI('/drunk/',
     {
         time: time,
         drunk: isDrunk
@@ -53,15 +42,19 @@ function createDrunk(time, isDrunk)
 
 function timeComparator(a, b)
 {
-    if (a['time'] == b['time'])
-        return 0;
     if (a['time'] < b['time'])
+    {
         return 1;
-    if (a['time'] > b['time'])
+    }
+    else if (a['time'] > b['time'])
+    {
         return -1;
+    }
+
+    return 0;
 }
 
-function addLocations(locations)
+function showLocations(locations)
 {
     if (locations.length == 0)
     {
@@ -70,12 +63,7 @@ function addLocations(locations)
 
     locations.sort(timeComparator);
     clearMarkers();
-
-    if ((s_path !== undefined) && (s_path != null))
-    {
-        s_path.setMap(null);
-        s_path = null;
-    }
+    clearPath();
 
     if (s_showAll)
     {
@@ -89,16 +77,8 @@ function addLocations(locations)
             coords.push(latlng);
         }
 
-        s_path = new google.maps.Polyline({
-            path: coords,
-            geodesic: true,
-            strokeColor: '#ff0000',
-            stokeOpacity: 0.85,
-            strokeWeight: 2
-        });
-
         s_map.fitBounds(bounds);
-        s_path.setMap(s_map);
+        addPath(coords);
     }
     else
     {
@@ -196,13 +176,62 @@ function labelMarker(marker, message)
     });
 }
 
-function handleNavOption(showAll)
+function addPath(coords)
 {
-    s_showAll = showAll;
-    getLocations();
+    s_path = new google.maps.Polyline({
+        path: coords,
+        geodesic: true,
+        strokeColor: '#ff0000',
+        stokeOpacity: 0.85,
+        strokeWeight: 2
+    });
+
+    s_path.setMap(s_map);
 }
 
-function showDrunkStatus()
+function clearPath()
 {
-    getDrunks();
+    if (s_path !== null)
+    {
+        s_path.setMap(null);
+        s_path = null;
+    }
+}
+
+function getAPI(uri, onResponse)
+{
+    setLoadStatus(true);
+
+    $.get(uri, function(data)
+    {
+        if (typeof onResponse !== 'undefined')
+        {
+            onResponse(data.data);
+        }
+
+        setLoadStatus(false);
+    });
+}
+
+function postAPI(uri, data, onResponse)
+{
+    $.post(uri, data, function(data)
+    {
+        if (typeof onResponse !== 'undefined')
+        {
+            onResponse(data);
+        }
+    });
+}
+
+function setLoadStatus(loading)
+{
+    if (loading)
+    {
+        $('.hamburger').children().addClass('loading');
+    }
+    else
+    {
+        $('.hamburger').children().removeClass('loading');
+    }
 }

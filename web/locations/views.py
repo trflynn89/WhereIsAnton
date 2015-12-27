@@ -25,7 +25,7 @@ class Locations(View):
             pass
 
         return HttpResponse(
-            json.dumps({ 'locations': locations }),
+            json.dumps({ 'data': locations }),
             content_type='application/json')
 
     def post(self, request, *args, **kwargs):
