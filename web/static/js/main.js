@@ -72,7 +72,11 @@ function showLocations(locations)
 
         for (var i = 0; i < locations.length; ++i)
         {
-            var latlng = addMarker(locations[i]);
+            var lat = locations[i]['latitude'];
+            var lng = locations[i]['longitude'];
+            var adr = locations[i]['address'];
+
+            var latlng = addMarker(lat, lng, adr);
             bounds.extend(latlng);
             coords.push(latlng);
         }
@@ -84,11 +88,12 @@ function showLocations(locations)
     {
         var lat = locations[0]['latitude'];
         var lng = locations[0]['longitude'];
+        var adr = locations[0]['address'];
 
         s_map.setCenter(new google.maps.LatLng(lat, lng));
         s_map.setZoom(8);
 
-        addMarker(locations[0]);
+        addMarker(lat, lng, adr);
     }
 }
 
@@ -139,9 +144,19 @@ function showDrunks(drunks)
     });
 }
 
-function addMarker(location)
+function addMarker(lat, lng, label)
 {
-    var latlng = new google.maps.LatLng(location['latitude'], location['longitude']);
+    var latlng = new google.maps.LatLng(lat, lng);
+
+    for (var i = 0; i < s_markers.length; ++i)
+    {
+        var pos = s_markers[i].position;
+
+        if ((pos.lat() === lat) && (pos.lng() === lng))
+        {
+            return latlng;
+        }
+    }
 
     var marker = new google.maps.Marker(
     {
@@ -149,7 +164,7 @@ function addMarker(location)
         map: s_map
     });
 
-    labelMarker(marker, location['address']);
+    labelMarker(marker, label);
     s_markers.push(marker);
 
     return latlng;
@@ -178,12 +193,35 @@ function labelMarker(marker, message)
 
 function addPath(coords)
 {
+    var path = [];
+
+    for (var i = 0; i < coords.length; ++i)
+    {
+        path.push(coords[i]);
+
+        if (i + 1 < coords.length)
+        {
+            var bounds = new google.maps.LatLngBounds();
+            bounds.extend(coords[i]);
+            bounds.extend(coords[i + 1]);
+
+            var center = bounds.getCenter();
+
+            var offcenter = new google.maps.LatLng(
+                center.lat() + rand(0, 4),
+                center.lng() + rand(0, 4)
+            );
+
+            path.push(offcenter);
+        }
+    }
+
     s_path = new google.maps.Polyline({
-        path: coords,
-        geodesic: true,
+        path: path,
         strokeColor: '#ff0000',
         stokeOpacity: 0.85,
-        strokeWeight: 2
+        strokeWeight: 2,
+        geodesic: true
     });
 
     s_path.setMap(s_map);
@@ -234,4 +272,10 @@ function setLoadStatus(loading)
     {
         $('.hamburger').children().removeClass('loading');
     }
+}
+
+function rand(min, max)
+{
+    var sign = (Math.random() < 0.5 ? -1 : 1);
+    return sign * (Math.random() * (max - min) + min);
 }

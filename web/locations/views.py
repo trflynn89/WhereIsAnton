@@ -36,11 +36,6 @@ class Locations(View):
         if not address or not latitude or not longitude:
             return HttpResponseBadRequest()
 
-        # Delete duplicate addresses
-        for location in Location.GetAllLocations():
-            if address == location.address:
-                location.delete()
-
         Location(
             address=address,
             latitude=float(latitude),
