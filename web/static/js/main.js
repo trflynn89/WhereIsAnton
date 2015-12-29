@@ -6,6 +6,7 @@ var s_showAll = false;
 var s_drunkTimeout = 10;
 
 var MILLIS_PER_HOUR = 1000 * 60 * 60;
+var METERS_PER_MILE = 1609.34;
 
 var GMap = google.maps.Map;
 var GPoint = google.maps.Point;
@@ -13,6 +14,7 @@ var GMarker = google.maps.Marker;
 var GLatLng = google.maps.LatLng;
 var GLatLngBounds = google.maps.LatLngBounds;
 var GInfoWindow = google.maps.InfoWindow;
+var GDistance = google.maps.geometry.spherical.computeDistanceBetween;
 
 $(document).ready(function(event)
 {
@@ -215,11 +217,16 @@ function drawPaths()
 {
     for (var i = 1; i < s_markers.length; ++i)
     {
+        var start = s_markers[i - 1].getPosition();
+        var end = s_markers[i].getPosition();
+
+        var curvature = calcCurvature(start, end);
+
         s_paths.push(
         {
-            start: s_markers[i - 1].getPosition(),
-            end: s_markers[i].getPosition(),
-            curvature: rand(-0.5, 0.5),
+            start: start,
+            end: end,
+            curvature: curvature,
             marker: new GMarker(
             {
                 clickable: false,
@@ -271,6 +278,34 @@ function calcPath(path)
     return ('M 0,0 q' + ' ' + c.x + ',' + c.y + ' ' + e.x + ',' + e.y);
 }
 
+function calcCurvature(start, end)
+{
+    var curvature = 0.05;
+
+    for (var j = 0; j < s_paths.length; ++j)
+    {
+        var path = s_paths[j];
+
+        if (arePathsSimilar(path.start, path.end, start, end))
+        {
+            curvature += 0.05;
+        }
+    }
+
+    return curvature;
+}
+
+function arePathsSimilar(p1Start, p1End, p2Start, p2End)
+{
+    var d1 = GDistance(p1Start, p2Start) / METERS_PER_MILE;
+    var d2 = GDistance(p1End, p2End) / METERS_PER_MILE;
+
+    var d3 = GDistance(p1Start, p2End) / METERS_PER_MILE;
+    var d4 = GDistance(p1End, p2Start) / METERS_PER_MILE;
+
+    return (((d1 < 100) && (d2 < 100)) || ((d3 < 100) && (d4 < 100)));
+}
+
 function getAPI(uri, onResponse)
 {
     setLoadStatus(true);
@@ -307,9 +342,4 @@ function setLoadStatus(loading)
     {
         $('.hamburger').children().removeClass('loading');
     }
-}
-
-function rand(min, max)
-{
-    return (Math.random() * (max - min) + min);
 }
