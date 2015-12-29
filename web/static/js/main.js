@@ -108,7 +108,6 @@ var s_style =
     }
 ];
 
-
 $(document).ready(function(event)
 {
     s_map = new GMap(document.getElementById('map'),
@@ -123,7 +122,22 @@ $(document).ready(function(event)
     s_map.setMapTypeId('s_style');
 
     GEvent.addListener(s_map, 'zoom_changed', updatePaths);
-    getLocations(false);
+
+    var data = dataToShow();
+
+    if (data == "drunk")
+    {
+        getLocations(false);
+        getDrunks();
+    }
+    else if (data == "history")
+    {
+        getLocations(true);
+    }
+    else
+    {
+        getLocations(false);
+    }
 });
 
 function getLocations(showAll)
@@ -362,6 +376,11 @@ function updatePaths()
 function calcPath(path)
 {
     var projection = s_map.getProjection();
+
+    if (projection === undefined)
+    {
+        return '';
+    }
 
     var p1 = projection.fromLatLngToPoint(path.start);
     var p2 = projection.fromLatLngToPoint(path.end);

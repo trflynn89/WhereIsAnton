@@ -9,14 +9,17 @@ class Home(View):
 
     def get(self, request, *args, **kwargs):
         url = self._formUrl()
-        version = self._getVersion();
+        version = self._getVersion()
+
+        show = request.GET.get('show')
 
         return render_to_response('home.html',
             {
                 'url': url,
                 'name': NAME,
+                'show': show,
                 'version': version
-            });
+            })
 
     def _formUrl(self):
         proto = self._getEnv('wsgi.url_scheme')
