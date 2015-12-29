@@ -1,6 +1,11 @@
 var s_map = null;
 var s_path = null;
 var s_markers = [];
+
+var s_curves = [];
+var s_curvatures = [];
+var s_pointPairs = [];
+
 var s_showAll = false;
 var s_drunkTimeout = 10;
 
@@ -62,13 +67,11 @@ function showLocations(locations)
     }
 
     locations.sort(timeComparator);
-    clearMarkers();
-    clearPath();
+    clearMap();
 
     if (s_showAll)
     {
         var bounds = new google.maps.LatLngBounds();
-        var coords = [];
 
         for (var i = 0; i < locations.length; ++i)
         {
@@ -78,11 +81,10 @@ function showLocations(locations)
 
             var latlng = addMarker(lat, lng, adr);
             bounds.extend(latlng);
-            coords.push(latlng);
         }
 
         s_map.fitBounds(bounds);
-        addPath(coords);
+        addPath();
     }
     else
     {
@@ -154,35 +156,52 @@ function addMarker(lat, lng, label)
 
         if ((pos.lat() === lat) && (pos.lng() === lng))
         {
-            return latlng;
+            label = null;
+            break;
         }
     }
 
     var marker = new google.maps.Marker(
     {
         position: latlng,
+        optimized: false,
+        zIndex: 1,
         map: s_map
     });
 
-    labelMarker(marker, label);
-    s_markers.push(marker);
+    if ((label !== undefined) && (label !== null))
+    {
+        labelMarker(marker, label);
+    }
 
+    s_markers.push(marker);
     return latlng;
 }
 
-function clearMarkers()
+function clearMap()
 {
+    for (var i = 0; i < s_curves.length; ++i)
+    {
+        s_curves[i].setMap(null);
+    }
     for (var i = 0; i < s_markers.length; ++i)
     {
         s_markers[i].setMap(null);
     }
 
+    s_curves = [];
     s_markers = [];
+    s_curvatures = [];
+    s_pointPairs = [];
 }
 
 function labelMarker(marker, message)
 {
-    var infowindow = new google.maps.InfoWindow({ content: message });
+    var infowindow = new google.maps.InfoWindow(
+    {
+        content: message
+    });
+
     infowindow.open(marker.getMap(), marker);
 
     marker.addListener('click', function()
@@ -191,48 +210,73 @@ function labelMarker(marker, message)
     });
 }
 
-function addPath(coords)
+function addPath()
 {
-    var path = [];
-
-    for (var i = 0; i < coords.length; ++i)
+    for (var i = 0; i < s_markers.length - 1; ++i)
     {
-        path.push(coords[i]);
-
-        if (i + 1 < coords.length)
+        s_curves.push(new google.maps.Marker(
         {
-            var bounds = new google.maps.LatLngBounds();
-            bounds.extend(coords[i]);
-            bounds.extend(coords[i + 1]);
+            clickable: false,
+            optimized: false,
+            zIndex: 0,
+            map: s_map
+        }));
 
-            var center = bounds.getCenter();
+        s_curvatures.push(rand(-0.5, 0.5));
 
-            var offcenter = new google.maps.LatLng(
-                center.lat() + rand(0, 4),
-                center.lng() + rand(0, 4)
-            );
-
-            path.push(offcenter);
-        }
+        s_pointPairs.push([]);
+        s_pointPairs[i].push(s_markers[i].getPosition());
+        s_pointPairs[i].push(s_markers[i + 1].getPosition());
     }
 
-    s_path = new google.maps.Polyline({
-        path: path,
-        strokeColor: '#ff0000',
-        stokeOpacity: 0.85,
-        strokeWeight: 2,
-        geodesic: true
-    });
+    google.maps.event.clearListeners(s_map, 'zoom_changed');
+    google.maps.event.addListener(s_map, 'zoom_changed', updateCurves);
 
-    s_path.setMap(s_map);
+    updateCurves();
 }
 
-function clearPath()
+function drawCurve(index)
 {
-    if (s_path !== null)
+    var pos1 = s_pointPairs[index][0];
+    var pos2 = s_pointPairs[index][1];
+
+    var projection = s_map.getProjection();
+    var p1 = projection.fromLatLngToPoint(pos1);
+    var p2 = projection.fromLatLngToPoint(pos2);
+
+    // Quadratic Bezier curve
+    var e = new google.maps.Point(p2.x - p1.x, p2.y - p1.y);
+    var m = new google.maps.Point(e.x / 2, e.y / 2);
+    var o = new google.maps.Point(e.y, -e.x);
+    var c = new google.maps.Point(
+        m.x + s_curvatures[index] * o.x,
+        m.y + s_curvatures[index] * o.y
+    );
+
+    var path = 'M 0,0 q ' + c.x + ',' + c.y + ' ' + e.x + ',' + e.y;
+
+    var zoom = s_map.getZoom();
+    var scale = 1 / (Math.pow(2, -zoom));
+
+    var symbol = {
+        path: path,
+        scale: scale,
+        strokeWeight: 2,
+        strokeColor: '#993333'
+    };
+
+    s_curves[index].setOptions(
     {
-        s_path.setMap(null);
-        s_path = null;
+        position: pos1,
+        icon: symbol
+    });
+}
+
+function updateCurves()
+{
+    for (var i = 0; i < s_curves.length; ++i)
+    {
+        drawCurve(i);
     }
 }
 
@@ -276,6 +320,5 @@ function setLoadStatus(loading)
 
 function rand(min, max)
 {
-    var sign = (Math.random() < 0.5 ? -1 : 1);
-    return sign * (Math.random() * (max - min) + min);
+    return (Math.random() * (max - min) + min);
 }
