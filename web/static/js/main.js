@@ -21,6 +21,7 @@ $(document).ready(function(event)
     {
         disableDefaultUI: true,
         center: new GLatLng(0, 0),
+        maxZoom: 8,
         zoom: 2
     });
 
@@ -74,34 +75,20 @@ function showLocations(locations)
     locations.sort(timeComparator);
     clearMap();
 
-    if (locations.length > 1)
+    var bounds = new GLatLngBounds();
+
+    for (var i = 0; i < locations.length; ++i)
     {
-        var bounds = new GLatLngBounds();
+        var lat = locations[i]['latitude'];
+        var lng = locations[i]['longitude'];
+        var adr = locations[i]['address'];
 
-        for (var i = 0; i < locations.length; ++i)
-        {
-            var lat = locations[i]['latitude'];
-            var lng = locations[i]['longitude'];
-            var adr = locations[i]['address'];
-
-            var latlng = addMarker(lat, lng, adr);
-            bounds.extend(latlng);
-        }
-
-        s_map.fitBounds(bounds);
-        drawPaths();
+        var latlng = addMarker(lat, lng, adr);
+        bounds.extend(latlng);
     }
-    else if (locations.length == 1)
-    {
-        var lat = locations[0]['latitude'];
-        var lng = locations[0]['longitude'];
-        var adr = locations[0]['address'];
 
-        s_map.setCenter(new GLatLng(lat, lng));
-        s_map.setZoom(8);
-
-        addMarker(lat, lng, adr);
-    }
+    fitBounds(bounds);
+    drawPaths();
 }
 
 function showDrunks(drunks)
@@ -212,6 +199,22 @@ function labelMarker(marker, message)
     }
 }
 
+function fitBounds(bounds)
+{
+    var sw = bounds.getSouthWest();
+    var ne = bounds.getNorthEast();
+
+    var north = Math.max(sw.lat(), ne.lat());
+    var south = Math.min(sw.lat(), ne.lat());
+    var east = Math.max(sw.lng(), ne.lng());
+    var west = Math.min(sw.lng(), ne.lng());
+
+    s_map.fitBounds(new GLatLngBounds(
+        new GLatLng(south, west),
+        new GLatLng(north, east)
+    ));
+}
+
 function drawPaths()
 {
     for (var i = 1; i < s_markers.length; ++i)
@@ -241,7 +244,7 @@ function drawPaths()
 
 function updatePaths()
 {
-    var zoom = s_map.getZoom();
+    var scale = 1 / (Math.pow(2, -1 * s_map.getZoom()));
 
     for (var i = 0; i < s_paths.length; ++i)
     {
@@ -253,7 +256,7 @@ function updatePaths()
             icon:
             {
                 path: calcPath(path),
-                scale: (1 / (Math.pow(2, -zoom))),
+                scale: scale,
                 strokeColor: '#993333',
                 strokeWeight: 2
             }
