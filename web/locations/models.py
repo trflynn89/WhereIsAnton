@@ -8,9 +8,9 @@ class Location(db.Model):
     longitude = db.FloatProperty()
 
     @staticmethod
-    def GetAllLocations():
+    def GetAllLocations(limit):
         query = db.GqlQuery('SELECT * FROM Location ORDER BY time DESC')
-        return query.fetch(None)
+        return query.fetch(limit)
 
     @staticmethod
     def GetLastLocation():

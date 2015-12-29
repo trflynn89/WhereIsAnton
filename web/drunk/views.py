@@ -13,7 +13,10 @@ class Drunk(View):
         drunks = list()
 
         try:
-            for d in Drunks.GetAllDrunks():
+            limit = request.GET.get('limit');
+            limit = int(limit) if limit else None
+
+            for d in Drunks.GetAllDrunks(limit):
                 drunk = dict()
 
                 drunk['time'] = d.time.isoformat()

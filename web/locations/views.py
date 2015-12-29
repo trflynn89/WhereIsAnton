@@ -12,7 +12,10 @@ class Locations(View):
         locations = list()
 
         try:
-            for loc in Location.GetAllLocations():
+            limit = request.GET.get('limit');
+            limit = int(limit) if limit else None
+
+            for loc in Location.GetAllLocations(limit):
                 location = dict()
 
                 location['time'] = loc.time.isoformat()

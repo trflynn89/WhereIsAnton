@@ -2,7 +2,6 @@ var s_map = null;
 var s_markers = [];
 var s_paths = [];
 
-var s_showAll = false;
 var s_drunkTimeout = 10;
 
 var MILLIS_PER_HOUR = 1000 * 60 * 60;
@@ -31,13 +30,20 @@ $(document).ready(function(event)
 
 function getLocations(showAll)
 {
-    s_showAll = showAll;
-    getAPI('/locations/', showLocations);
+    getAPI('/locations/',
+        {
+            limit: showAll ? null : 1
+        },
+        showLocations);
 }
 
 function getDrunks()
 {
-    getAPI('/drunk/', showDrunks);
+    getAPI('/drunk/',
+        {
+            limit: 1
+        },
+        showDrunks);
 }
 
 function createDrunk(time, isDrunk)
@@ -65,15 +71,10 @@ function timeComparator(a, b)
 
 function showLocations(locations)
 {
-    if (locations.length == 0)
-    {
-        return;
-    }
-
     locations.sort(timeComparator);
     clearMap();
 
-    if (s_showAll)
+    if (locations.length > 1)
     {
         var bounds = new GLatLngBounds();
 
@@ -90,7 +91,7 @@ function showLocations(locations)
         s_map.fitBounds(bounds);
         drawPaths();
     }
-    else
+    else if (locations.length == 1)
     {
         var lat = locations[0]['latitude'];
         var lng = locations[0]['longitude'];
@@ -117,8 +118,6 @@ function showDrunks(drunks)
 
         return;
     }
-
-    drunks.sort(timeComparator);
 
     var isDrunk = drunks[0]['drunk'];
     var dTime = new Date(drunks[0]['time']).getTime();
@@ -306,11 +305,11 @@ function arePathsSimilar(p1Start, p1End, p2Start, p2End)
     return (((d1 < 100) && (d2 < 100)) || ((d3 < 100) && (d4 < 100)));
 }
 
-function getAPI(uri, onResponse)
+function getAPI(uri, data, onResponse)
 {
     setLoadStatus(true);
 
-    $.get(uri, function(data)
+    $.get(uri, data, function(data)
     {
         if (typeof onResponse !== 'undefined')
         {

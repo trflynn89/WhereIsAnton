@@ -16,7 +16,7 @@
 # See https://cloud.google.com/appengine/docs/managed-vms/config for details.
 
 # [START django_app]
-version: release-0009
+version: release-0010
 runtime: python27
 api_version: 1
 threadsafe: yes
