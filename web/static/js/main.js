@@ -12,39 +12,134 @@ var GPoint = google.maps.Point;
 var GMarker = google.maps.Marker;
 var GLatLng = google.maps.LatLng;
 var GLatLngBounds = google.maps.LatLngBounds;
+var GStyledMapType = google.maps.StyledMapType;
 var GInfoWindow = google.maps.InfoWindow;
 var GDistance = google.maps.geometry.spherical.computeDistanceBetween;
+var GEvent = google.maps.event;
+
+var s_style =
+[
+    {
+        featureType: "administrative",
+        elementType: "labels.text.fill",
+        stylers: [
+            {
+                color: "#444444"
+            }
+        ]
+    },
+    {
+        featureType: "landscape",
+        elementType: "all",
+        stylers: [
+            {
+                color: "#f2f2f2"
+            }
+        ]
+    },
+    {
+        featureType: "poi",
+        elementType: "all",
+        stylers: [
+            {
+                visibility: "off"
+            }
+        ]
+    },
+    {
+        featureType: "road",
+        elementType: "all",
+        stylers: [
+            {
+                "saturation": -100
+            },
+            {
+                "lightness": 45
+            }
+        ]
+    },
+    {
+        featureType: "road.highway",
+        elementType: "all",
+        stylers: [
+            {
+                visibility: "simplified"
+            }
+        ]
+    },
+    {
+        featureType: "road",
+        elementType: "labels",
+        stylers: [
+            {
+                visibility: "off"
+            }
+        ]
+    },
+    {
+        featureType: "road.arterial",
+        elementType: "labels.icon",
+        stylers: [
+            {
+                visibility: "off"
+            }
+        ]
+    },
+    {
+        featureType: "transit",
+        elementType: "all",
+        stylers: [
+            {
+                visibility: "off"
+            }
+        ]
+    },
+    {
+        featureType: "water",
+        elementType: "all",
+        stylers: [
+            {
+                color: "#46bcec"
+            },
+            {
+                visibility: "on"
+            }
+        ]
+    }
+];
+
 
 $(document).ready(function(event)
 {
     s_map = new GMap(document.getElementById('map'),
     {
-        disableDefaultUI: true,
         center: new GLatLng(0, 0),
+        disableDefaultUI: true,
         maxZoom: 8,
         zoom: 2
     });
 
-    google.maps.event.addListener(s_map, 'zoom_changed', updatePaths);
+    s_map.mapTypes.set('s_style', new GStyledMapType(s_style));
+    s_map.setMapTypeId('s_style');
+
+    GEvent.addListener(s_map, 'zoom_changed', updatePaths);
     getLocations(false);
 });
 
 function getLocations(showAll)
 {
     getAPI('/locations/',
-        {
-            limit: showAll ? null : 1
-        },
-        showLocations);
+    {
+        limit: showAll ? null : 1
+    }, showLocations);
 }
 
 function getDrunks()
 {
     getAPI('/drunk/',
-        {
-            limit: 1
-        },
-        showDrunks);
+    {
+        limit: 1
+    }, showDrunks);
 }
 
 function createDrunk(time, isDrunk)
@@ -53,7 +148,7 @@ function createDrunk(time, isDrunk)
     {
         time: time,
         drunk: isDrunk
-    });
+    }, null);
 }
 
 function timeComparator(a, b)
@@ -314,7 +409,7 @@ function getAPI(uri, data, onResponse)
 
     $.get(uri, data, function(data)
     {
-        if (typeof onResponse !== 'undefined')
+        if (onResponse !== null)
         {
             onResponse(data.data);
         }
@@ -327,7 +422,7 @@ function postAPI(uri, data, onResponse)
 {
     $.post(uri, data, function(data)
     {
-        if (typeof onResponse !== 'undefined')
+        if (onResponse !== null)
         {
             onResponse(data);
         }
