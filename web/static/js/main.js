@@ -1,28 +1,29 @@
 var s_map = null;
-var s_path = null;
 var s_markers = [];
-
-var s_curves = [];
-var s_curvatures = [];
-var s_pointPairs = [];
+var s_paths = [];
 
 var s_showAll = false;
 var s_drunkTimeout = 10;
 
 var MILLIS_PER_HOUR = 1000 * 60 * 60;
 
+var GMap = google.maps.Map;
+var GPoint = google.maps.Point;
+var GMarker = google.maps.Marker;
+var GLatLng = google.maps.LatLng;
+var GLatLngBounds = google.maps.LatLngBounds;
+var GInfoWindow = google.maps.InfoWindow;
+
 $(document).ready(function(event)
 {
-    s_map = new google.maps.Map(
-        document.getElementById('map'),
-        {
-            disableDefaultUI: true,
-            center: { lat: 0, lng: 0 },
-            zoom: 2
-        }
-    );
+    s_map = new GMap(document.getElementById('map'),
+    {
+        disableDefaultUI: true,
+        center: new GLatLng(0, 0),
+        zoom: 2
+    });
 
-    google.maps.event.addListener(s_map, 'zoom_changed', updateCurves);
+    google.maps.event.addListener(s_map, 'zoom_changed', updatePaths);
     getLocations(false);
 });
 
@@ -72,7 +73,7 @@ function showLocations(locations)
 
     if (s_showAll)
     {
-        var bounds = new google.maps.LatLngBounds();
+        var bounds = new GLatLngBounds();
 
         for (var i = 0; i < locations.length; ++i)
         {
@@ -85,7 +86,7 @@ function showLocations(locations)
         }
 
         s_map.fitBounds(bounds);
-        addPath();
+        drawPaths();
     }
     else
     {
@@ -93,7 +94,7 @@ function showLocations(locations)
         var lng = locations[0]['longitude'];
         var adr = locations[0]['address'];
 
-        s_map.setCenter(new google.maps.LatLng(lat, lng));
+        s_map.setCenter(new GLatLng(lat, lng));
         s_map.setZoom(8);
 
         addMarker(lat, lng, adr);
@@ -147,22 +148,27 @@ function showDrunks(drunks)
     });
 }
 
-function addMarker(lat, lng, label)
+function clearMap()
 {
-    var latlng = new google.maps.LatLng(lat, lng);
-
     for (var i = 0; i < s_markers.length; ++i)
     {
-        var pos = s_markers[i].position;
-
-        if ((pos.lat() === lat) && (pos.lng() === lng))
-        {
-            label = null;
-            break;
-        }
+        s_markers[i].setMap(null);
+    }
+    for (var i = 0; i < s_paths.length; ++i)
+    {
+        var marker = s_paths[i].marker;
+        marker.setMap(null);
     }
 
-    var marker = new google.maps.Marker(
+    s_markers = [];
+    s_paths = [];
+}
+
+function addMarker(lat, lng, label)
+{
+    var latlng = new GLatLng(lat, lng);
+
+    var marker = new GMarker(
     {
         position: latlng,
         optimized: false,
@@ -170,85 +176,77 @@ function addMarker(lat, lng, label)
         map: s_map
     });
 
-    if ((label !== undefined) && (label !== null))
-    {
-        labelMarker(marker, label);
-    }
-
-    s_markers.push(marker);
-    return latlng;
-}
-
-function clearMap()
-{
-    for (var i = 0; i < s_curves.length; ++i)
-    {
-        s_curves[i].setMap(null);
-    }
     for (var i = 0; i < s_markers.length; ++i)
     {
-        s_markers[i].setMap(null);
+        if (s_markers[i].position.equals(latlng))
+        {
+            marker.setMap(null);
+            break;
+        }
     }
 
-    s_curves = [];
-    s_markers = [];
-    s_curvatures = [];
-    s_pointPairs = [];
+    labelMarker(marker, label);
+    s_markers.push(marker);
+
+    return latlng;
 }
 
 function labelMarker(marker, message)
 {
-    var infowindow = new google.maps.InfoWindow(
-    {
-        content: message
-    });
+    var map = marker.getMap();
 
-    infowindow.open(marker.getMap(), marker);
-
-    marker.addListener('click', function()
+    if ((map !== null) && (message !== undefined))
     {
+        var infowindow = new GInfoWindow(
+        {
+            content: message
+        });
+
         infowindow.open(marker.getMap(), marker);
-    });
+
+        marker.addListener('click', function()
+        {
+            infowindow.open(marker.getMap(), marker);
+        });
+    }
 }
 
-function addPath()
+function drawPaths()
 {
-    for (var i = 0; i < s_markers.length - 1; ++i)
+    for (var i = 1; i < s_markers.length; ++i)
     {
-        s_curves.push(new google.maps.Marker(
+        s_paths.push(
         {
-            clickable: false,
-            optimized: false,
-            zIndex: 0,
-            map: s_map
-        }));
-
-        s_curvatures.push(rand(-0.5, 0.5));
-
-        s_pointPairs.push([
-            s_markers[i].getPosition(),
-            s_markers[i + 1].getPosition()
-        ]);
+            start: s_markers[i - 1].getPosition(),
+            end: s_markers[i].getPosition(),
+            curvature: rand(-0.5, 0.5),
+            marker: new GMarker(
+            {
+                clickable: false,
+                optimized: false,
+                zIndex: 0,
+                map: s_map
+            })
+        });
     }
 
-    updateCurves();
+    updatePaths();
 }
 
-function updateCurves()
+function updatePaths()
 {
     var zoom = s_map.getZoom();
 
-    for (var i = 0; i < s_curves.length; ++i)
+    for (var i = 0; i < s_paths.length; ++i)
     {
-        var start = s_pointPairs[i][0];
-        var end = s_pointPairs[i][1];
+        var path = s_paths[i];
 
-        s_curves[i].setOptions(
+        path.marker.setOptions(
         {
-            position: start,
+            position: path.start,
             icon:
             {
-                path: calcCurve(start, end, s_curvatures[i]),
+                path: calcPath(path),
                 scale: (1 / (Math.pow(2, -zoom))),
                 strokeColor: '#993333',
                 strokeWeight: 2
@@ -257,25 +255,20 @@ function updateCurves()
     }
 }
 
-function calcCurve(start, end, curvature)
+function calcPath(path)
 {
     var projection = s_map.getProjection();
-    var p1 = projection.fromLatLngToPoint(start);
-    var p2 = projection.fromLatLngToPoint(end);
+
+    var p1 = projection.fromLatLngToPoint(path.start);
+    var p2 = projection.fromLatLngToPoint(path.end);
 
     // Quadratic Bezier curve
-    var e = new google.maps.Point(p2.x - p1.x, p2.y - p1.y);
-    var m = new google.maps.Point(e.x / 2, e.y / 2);
-    var o = new google.maps.Point(e.y, -e.x);
-    var c = new google.maps.Point(
-        m.x + curvature * o.x,
-        m.y + curvature * o.y
-    );
+    var e = new GPoint(p2.x - p1.x, p2.y - p1.y);
+    var m = new GPoint(e.x / 2, e.y / 2);
+    var o = new GPoint(e.y, -e.x);
+    var c = new GPoint(m.x + path.curvature * o.x, m.y + path.curvature * o.y);
 
-    return ('M 0,0 q'
-        + ' ' + c.x + ',' + c.y
-        + ' ' + e.x + ',' + e.y
-    );
+    return ('M 0,0 q' + ' ' + c.x + ',' + c.y + ' ' + e.x + ',' + e.y);
 }
 
 function getAPI(uri, onResponse)
