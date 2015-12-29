@@ -22,6 +22,7 @@ $(document).ready(function(event)
         }
     );
 
+    google.maps.event.addListener(s_map, 'zoom_changed', updateCurves);
     getLocations(false);
 });
 
@@ -224,60 +225,57 @@ function addPath()
 
         s_curvatures.push(rand(-0.5, 0.5));
 
-        s_pointPairs.push([]);
-        s_pointPairs[i].push(s_markers[i].getPosition());
-        s_pointPairs[i].push(s_markers[i + 1].getPosition());
+        s_pointPairs.push([
+            s_markers[i].getPosition(),
+            s_markers[i + 1].getPosition()
+        ]);
     }
-
-    google.maps.event.clearListeners(s_map, 'zoom_changed');
-    google.maps.event.addListener(s_map, 'zoom_changed', updateCurves);
 
     updateCurves();
 }
 
-function drawCurve(index)
+function updateCurves()
 {
-    var pos1 = s_pointPairs[index][0];
-    var pos2 = s_pointPairs[index][1];
+    var zoom = s_map.getZoom();
 
+    for (var i = 0; i < s_curves.length; ++i)
+    {
+        var start = s_pointPairs[i][0];
+        var end = s_pointPairs[i][1];
+
+        s_curves[i].setOptions(
+        {
+            position: start,
+            icon:
+            {
+                path: calcCurve(start, end, s_curvatures[i]),
+                scale: (1 / (Math.pow(2, -zoom))),
+                strokeColor: '#993333',
+                strokeWeight: 2
+            }
+        });
+    }
+}
+
+function calcCurve(start, end, curvature)
+{
     var projection = s_map.getProjection();
-    var p1 = projection.fromLatLngToPoint(pos1);
-    var p2 = projection.fromLatLngToPoint(pos2);
+    var p1 = projection.fromLatLngToPoint(start);
+    var p2 = projection.fromLatLngToPoint(end);
 
     // Quadratic Bezier curve
     var e = new google.maps.Point(p2.x - p1.x, p2.y - p1.y);
     var m = new google.maps.Point(e.x / 2, e.y / 2);
     var o = new google.maps.Point(e.y, -e.x);
     var c = new google.maps.Point(
-        m.x + s_curvatures[index] * o.x,
-        m.y + s_curvatures[index] * o.y
+        m.x + curvature * o.x,
+        m.y + curvature * o.y
     );
 
-    var path = 'M 0,0 q ' + c.x + ',' + c.y + ' ' + e.x + ',' + e.y;
-
-    var zoom = s_map.getZoom();
-    var scale = 1 / (Math.pow(2, -zoom));
-
-    var symbol = {
-        path: path,
-        scale: scale,
-        strokeWeight: 2,
-        strokeColor: '#993333'
-    };
-
-    s_curves[index].setOptions(
-    {
-        position: pos1,
-        icon: symbol
-    });
-}
-
-function updateCurves()
-{
-    for (var i = 0; i < s_curves.length; ++i)
-    {
-        drawCurve(i);
-    }
+    return ('M 0,0 q'
+        + ' ' + c.x + ',' + c.y
+        + ' ' + e.x + ',' + e.y
+    );
 }
 
 function getAPI(uri, onResponse)
