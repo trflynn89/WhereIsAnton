@@ -114,7 +114,7 @@ $(document).ready(function(event)
     {
         center: new GLatLng(0, 0),
         disableDefaultUI: true,
-        maxZoom: 8,
+        maxZoom: 10,
         zoom: 2
     });
 

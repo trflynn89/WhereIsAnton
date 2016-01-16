@@ -37,8 +37,9 @@ public class LocationActivity
     extends FragmentActivity
     implements OnMapReadyCallback, LocationListener, OnClickListener
 {
-    private static final String S_URL = "https://where-is-anton.appspot.com/locations/";
-    private static final String S_DRUNK = "https://where-is-anton.appspot.com/drunk/";
+    private static final String S_HOME_URL = "https://where-is-anton.appspot.com/";
+    private static final String S_LOCATION_URL = S_HOME_URL + "/locations/";
+    private static final String S_DRUNK_URL = S_HOME_URL + "/drunk/";
     private static final String S_TAG = "whereisanton";
 
     private GoogleMap m_map;
@@ -117,6 +118,7 @@ public class LocationActivity
 
             Geocoder coder = new Geocoder(this, Locale.getDefault());
             m_lastLocation = location;
+            m_lastAddress = null;
 
             try
             {
@@ -126,26 +128,31 @@ public class LocationActivity
                     1
                 );
 
-                String state = addresses.get(0).getAddressLine(1);
-                String country = addresses.get(0).getAddressLine(2);
+                if (addresses.size() > 0)
+                {
+                    Address address = addresses.get(0);
 
-                if (state == null)
-                {
-                    m_lastAddress = addresses.get(0).getAddressLine(0);
-                }
-                else if (country == null)
-                {
-                    m_lastAddress = state;
-                }
-                else
-                {
-                    m_lastAddress = state + ", " + country;
+                    String city = address.getLocality();
+                    String state = address.getAdminArea();
+                    String country = address.getCountryCode();
+
+                    if (city != null)
+                    {
+                        m_lastAddress = city;
+                    }
+                    if (state != null)
+                    {
+                        m_lastAddress = (m_lastAddress == null ? state : m_lastAddress + ", " + state);
+                    }
+                    if ((country != null) && !country.equals("US"))
+                    {
+                        m_lastAddress = (m_lastAddress == null ? country : m_lastAddress + ", " + country);
+                    }
                 }
             }
             catch (IOException e)
             {
                 Log.e(S_TAG, e.getMessage());
-                m_lastAddress = null;
             }
 
             LatLng pos = new LatLng(m_lastLocation.getLatitude(), m_lastLocation.getLongitude());
@@ -204,12 +211,12 @@ public class LocationActivity
 
     public void onDrunk(View v)
     {
-        Log.w(S_TAG, "!!!!!!!! drunk");
+        Log.w(S_TAG, "Drunk status posted");
         new DrunkTask().execute("1");
     }
 
     public void onSober(View v) {
-        Log.w(S_TAG, "!!!!!!! sober");
+        Log.w(S_TAG, "Sober status posted");
         new DrunkTask().execute("0");
     }
 
@@ -217,14 +224,14 @@ public class LocationActivity
     {
         protected Integer doInBackground(String... data)
         {
-            Log.i(S_TAG, "Sending to: " + data[0]);
+            Log.i(S_TAG, "Sending to: '" + data[0] + "'");
             final int maxTries = 10;
 
             for (int i = 0; i < maxTries; ++i)
             {
                 try
                 {
-                    URL url = new URL(S_URL);
+                    URL url = new URL(S_LOCATION_URL);
 
                     Map<String, String> params = new LinkedHashMap<String, String>();
                     params.put("address", data[0]);
@@ -260,7 +267,7 @@ public class LocationActivity
             {
                 try
                 {
-                    URL url = new URL(S_DRUNK);
+                    URL url = new URL(S_DRUNK_URL);
 
                     Map<String, String> params = new LinkedHashMap<String, String>();
                     params.put("drunk", data[0]);
