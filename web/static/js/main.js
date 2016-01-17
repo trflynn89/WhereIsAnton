@@ -1,5 +1,6 @@
 var s_map = null;
 var s_markers = [];
+var s_arrows = [];
 var s_paths = [];
 
 var s_drunkTimeout = 10;
@@ -10,6 +11,8 @@ var METERS_PER_MILE = 1609.34;
 var GMap = google.maps.Map;
 var GPoint = google.maps.Point;
 var GMarker = google.maps.Marker;
+var GPolyline = google.maps.Polyline;
+var GSymbolPath = google.maps.SymbolPath;
 var GLatLng = google.maps.LatLng;
 var GLatLngBounds = google.maps.LatLngBounds;
 var GStyledMapType = google.maps.StyledMapType;
@@ -114,7 +117,7 @@ $(document).ready(function(event)
     {
         center: new GLatLng(0, 0),
         disableDefaultUI: true,
-        maxZoom: 10,
+        maxZoom: 5,
         zoom: 2
     });
 
@@ -255,9 +258,12 @@ function clearMap()
     {
         var marker = s_paths[i].marker;
         marker.setMap(null);
+
+        s_arrows[i].setMap(null);
     }
 
     s_markers = [];
+    s_arrows = [];
     s_paths = [];
 }
 
@@ -286,6 +292,29 @@ function addMarker(lat, lng, label)
     s_markers.push(marker);
 
     return latlng;
+}
+
+function addArrow(start, end)
+{
+    var line = new GPolyline(
+    {
+        path: [start, end],
+        strokeOpacity: 0,
+        map: s_map,
+        icons: [
+        {
+            icon:
+            {
+                path: GSymbolPath.BACKWARD_CLOSED_ARROW,
+                strokeColor: '#993333',
+                strokeOpacity: 1,
+                strokeWeight: 2
+            },
+            offset: '50%'
+        }]
+    });
+
+    s_arrows.push(line);
 }
 
 function labelMarker(marker, message)
@@ -355,6 +384,12 @@ function updatePaths()
 {
     var scale = 1 / (Math.pow(2, -1 * s_map.getZoom()));
 
+    for (var i = 0; i < s_arrows.length; ++i)
+    {
+        s_arrows[i].setMap(null);
+    }
+    s_arrows = [];
+
     for (var i = 0; i < s_paths.length; ++i)
     {
         var path = s_paths[i];
@@ -390,6 +425,20 @@ function calcPath(path)
     var m = new GPoint(e.x / 2, e.y / 2);
     var o = new GPoint(e.y, -e.x);
     var c = new GPoint(m.x + path.curvature * o.x, m.y + path.curvature * o.y);
+
+    // Midpoint of curve
+    var m1 = new GPoint((0.0 + c.x) / 2, (0.0 + c.y) / 2);
+    var m2 = new GPoint((c.x + e.x) / 2, (c.y + e.y) / 2);
+
+    var start = projection.fromPointToLatLng(
+        new GPoint(p1.x + m1.x, p1.y + m1.y)
+    );
+
+    var end = projection.fromPointToLatLng(
+        new GPoint(p1.x + m2.x, p1.y + m2.y)
+    );
+
+    addArrow(start, end);
 
     return ('M 0,0 q' + ' ' + c.x + ',' + c.y + ' ' + e.x + ',' + e.y);
 }
