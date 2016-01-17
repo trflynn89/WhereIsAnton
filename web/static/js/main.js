@@ -20,8 +20,7 @@ var GInfoWindow = google.maps.InfoWindow;
 var GDistance = google.maps.geometry.spherical.computeDistanceBetween;
 var GEvent = google.maps.event;
 
-var s_style =
-[
+var s_style = [
     {
         featureType: 'administrative',
         elementType: 'labels.text.fill',
@@ -128,12 +127,12 @@ $(document).ready(function(event)
 
     var data = dataToShow();
 
-    if (data == "drunk")
+    if (data === "drunk")
     {
         getLocations(false);
         getDrunks();
     }
-    else if (data == "history")
+    else if (data === "history")
     {
         getLocations(true);
     }
@@ -207,7 +206,7 @@ function showDrunks(drunks)
 {
     var name = getName();
 
-    if (drunks.length == 0)
+    if (drunks.length === 0)
     {
         Lobibox.alert('error',
         {
@@ -235,7 +234,7 @@ function showDrunks(drunks)
 
     var answer = (isDrunk ? 'Yes!' : 'Nope!');
     var status = (isDrunk ? ' drunk ' : ' sober ');
-    var units = (hours == 1 ? ' hour' : ' hours');
+    var units = (hours === 1 ? ' hour' : ' hours');
     var smile = (isDrunk ? ' :)' : ' :(');
     var type = (isDrunk ? 'info' : 'error');
 
@@ -302,16 +301,19 @@ function addArrow(start, end)
         strokeOpacity: 0,
         map: s_map,
         icons: [
-        {
-            icon:
             {
-                path: GSymbolPath.BACKWARD_CLOSED_ARROW,
-                strokeColor: '#993333',
-                strokeOpacity: 1,
-                strokeWeight: 2
-            },
-            offset: '50%'
-        }]
+                icon:
+                {
+                    path: GSymbolPath.BACKWARD_CLOSED_ARROW,
+                    strokeColor: '#993333',
+                    fillColor: '#993333',
+                    strokeWeight: 2,
+                    strokeOpacity: 1,
+                    fillOpacity: 1
+                },
+                offset: '50%'
+            }
+        ]
     });
 
     s_arrows.push(line);
