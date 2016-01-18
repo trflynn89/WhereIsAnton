@@ -116,7 +116,7 @@ $(document).ready(function(event)
     {
         center: new GLatLng(0, 0),
         disableDefaultUI: true,
-        maxZoom: 5,
+        maxZoom: 10,
         zoom: 2
     });
 
@@ -384,7 +384,8 @@ function drawPaths()
 
 function updatePaths()
 {
-    var scale = 1 / (Math.pow(2, -1 * s_map.getZoom()));
+    var zoom = s_map.getZoom();
+    var scale = 1 / (Math.pow(2, -zoom));
 
     for (var i = 0; i < s_arrows.length; ++i)
     {
@@ -396,17 +397,29 @@ function updatePaths()
     {
         var path = s_paths[i];
 
-        path.marker.setOptions(
+        // FIXME for some reason, the Bezier curves "jump" when the map zoom
+        // level is > 5. For now, just hide the curve when zoomed that far.
+        if (zoom > 5)
         {
-            position: path.start,
-            icon:
+            path.marker.setOptions(
             {
-                path: calcPath(path),
-                scale: scale,
-                strokeColor: '#993333',
-                strokeWeight: 2
-            }
-        });
+                icon: null
+            });
+        }
+        else
+        {
+            path.marker.setOptions(
+            {
+                position: path.start,
+                icon:
+                {
+                    path: calcPath(path),
+                    scale: scale,
+                    strokeColor: '#993333',
+                    strokeWeight: 2
+                }
+            });
+        }
     }
 }
 
