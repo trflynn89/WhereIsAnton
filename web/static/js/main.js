@@ -4,6 +4,7 @@ var s_arrows = [];
 var s_paths = [];
 
 var s_drunkTimeout = 10;
+var s_maxZoom = 5;
 
 var MILLIS_PER_HOUR = 1000 * 60 * 60;
 var METERS_PER_MILE = 1609.34;
@@ -397,33 +398,21 @@ function updatePaths()
     {
         var path = s_paths[i];
 
-        // FIXME for some reason, the Bezier curves "jump" when the map zoom
-        // level is > 5. For now, just hide the curve when zoomed that far.
-        if (zoom > 5)
+        path.marker.setOptions(
         {
-            path.marker.setOptions(
+            position: path.start,
+            icon:
             {
-                icon: null
-            });
-        }
-        else
-        {
-            path.marker.setOptions(
-            {
-                position: path.start,
-                icon:
-                {
-                    path: calcPath(path),
-                    scale: scale,
-                    strokeColor: '#993333',
-                    strokeWeight: 2
-                }
-            });
-        }
+                path: calcPath(path, zoom),
+                scale: scale,
+                strokeColor: '#993333',
+                strokeWeight: 2
+            }
+        });
     }
 }
 
-function calcPath(path)
+function calcPath(path, zoom)
 {
     var projection = s_map.getProjection();
 
@@ -442,18 +431,23 @@ function calcPath(path)
     var c = new GPoint(m.x + path.curvature * o.x, m.y + path.curvature * o.y);
 
     // Midpoint of curve
-    var m1 = new GPoint((0.0 + c.x) / 2, (0.0 + c.y) / 2);
-    var m2 = new GPoint((c.x + e.x) / 2, (c.y + e.y) / 2);
+    // FIXME for some reason, the Bezier curves "jump" when the map zoom level
+    // is > 5. For now, just hide the curve when zoomed that far.
+    if (zoom <= s_maxZoom)
+    {
+        var m1 = new GPoint((0.0 + c.x) / 2, (0.0 + c.y) / 2);
+        var m2 = new GPoint((c.x + e.x) / 2, (c.y + e.y) / 2);
 
-    var start = projection.fromPointToLatLng(
-        new GPoint(p1.x + m1.x, p1.y + m1.y)
-    );
+        var start = projection.fromPointToLatLng(
+            new GPoint(p1.x + m1.x, p1.y + m1.y)
+        );
 
-    var end = projection.fromPointToLatLng(
-        new GPoint(p1.x + m2.x, p1.y + m2.y)
-    );
+        var end = projection.fromPointToLatLng(
+            new GPoint(p1.x + m2.x, p1.y + m2.y)
+        );
 
-    addArrow(start, end);
+        addArrow(start, end);
+    }
 
     return ('M 0,0 q' + ' ' + c.x + ',' + c.y + ' ' + e.x + ',' + e.y);
 }
