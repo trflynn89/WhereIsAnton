@@ -1,6 +1,5 @@
 var s_map = null;
 var s_markers = [];
-var s_arrows = [];
 var s_paths = [];
 
 var s_drunkTimeout = 10;
@@ -256,14 +255,10 @@ function clearMap()
     }
     for (var i = 0; i < s_paths.length; ++i)
     {
-        var marker = s_paths[i].marker;
-        marker.setMap(null);
-
-        s_arrows[i].setMap(null);
+        s_paths[i].curve.setMap(null);
     }
 
     s_markers = [];
-    s_arrows = [];
     s_paths = [];
 }
 
@@ -292,32 +287,6 @@ function addMarker(lat, lng, label)
     s_markers.push(marker);
 
     return latlng;
-}
-
-function addArrow(start, end)
-{
-    var line = new GPolyline(
-    {
-        path: [start, end],
-        strokeOpacity: 0,
-        map: s_map,
-        icons: [
-            {
-                icon:
-                {
-                    path: GSymbolPath.BACKWARD_CLOSED_ARROW,
-                    strokeColor: '#993333',
-                    fillColor: '#993333',
-                    strokeWeight: 2,
-                    strokeOpacity: 1,
-                    fillOpacity: 1
-                },
-                offset: '50%'
-            }
-        ]
-    });
-
-    s_arrows.push(line);
 }
 
 function labelMarker(marker, message)
@@ -363,14 +332,19 @@ function drawPaths()
         var start = s_markers[i - 1].getPosition();
         var end = s_markers[i].getPosition();
 
-        var curvature = calcCurvature(start, end);
-
         s_paths.push(
         {
             start: start,
             end: end,
-            curvature: curvature,
-            marker: new GMarker(
+            curvature: calcCurvature(start, end),
+
+            arrow: new GPolyline(
+            {
+                strokeOpacity: 0,
+                map: s_map
+            }),
+
+            curve: new GMarker(
             {
                 clickable: false,
                 optimized: false,
@@ -388,22 +362,51 @@ function updatePaths()
     var zoom = s_map.getZoom();
     var scale = 1 / (Math.pow(2, -zoom));
 
-    for (var i = 0; i < s_arrows.length; ++i)
-    {
-        s_arrows[i].setMap(null);
-    }
-    s_arrows = [];
-
     for (var i = 0; i < s_paths.length; ++i)
     {
         var path = s_paths[i];
+        var bezier = bezierCurve(path);
 
-        path.marker.setOptions(
+        if (bezier === null)
+        {
+            path.arrow.setOptions({ icons: null });
+            path.curve.setOptions({ icon: null });
+            continue;
+        }
+
+        // FIXME for some reason, the Bezier curves "jump" when the map zoom
+        // level is > 5. For now, just hide the curve when zoomed that far.
+        if (zoom > s_maxZoom)
+        {
+            path.arrow.setOptions({ icons: null });
+        }
+        else
+        {
+            path.arrow.setOptions(
+            {
+                path: bezierTangent(bezier),
+                icons: [
+                {
+                    offset: '50%',
+                    icon:
+                    {
+                        path: GSymbolPath.BACKWARD_CLOSED_ARROW,
+                        strokeColor: '#993333',
+                        fillColor: '#993333',
+                        strokeWeight: 2,
+                        strokeOpacity: 1,
+                        fillOpacity: 1
+                    }
+                }]
+            });
+        }
+
+        path.curve.setOptions(
         {
             position: path.start,
             icon:
             {
-                path: calcPath(path, zoom),
+                path: bezierToSvg(bezier),
                 scale: scale,
                 strokeColor: '#993333',
                 strokeWeight: 2
@@ -412,44 +415,55 @@ function updatePaths()
     }
 }
 
-function calcPath(path, zoom)
+function bezierCurve(path)
 {
     var projection = s_map.getProjection();
 
     if (projection === undefined)
     {
-        return '';
+        return null;
     }
 
     var p1 = projection.fromLatLngToPoint(path.start);
     var p2 = projection.fromLatLngToPoint(path.end);
 
-    // Quadratic Bezier curve
     var e = new GPoint(p2.x - p1.x, p2.y - p1.y);
     var m = new GPoint(e.x / 2, e.y / 2);
     var o = new GPoint(e.y, -e.x);
     var c = new GPoint(m.x + path.curvature * o.x, m.y + path.curvature * o.y);
 
-    // Midpoint of curve
-    // FIXME for some reason, the Bezier curves "jump" when the map zoom level
-    // is > 5. For now, just hide the curve when zoomed that far.
-    if (zoom <= s_maxZoom)
-    {
-        var m1 = new GPoint((0.0 + c.x) / 2, (0.0 + c.y) / 2);
-        var m2 = new GPoint((c.x + e.x) / 2, (c.y + e.y) / 2);
+    return {
+        projection: projection,
+        p1: p1,
+        p2: p2,
+        c: c,
+        e: e
+    };
+}
 
-        var start = projection.fromPointToLatLng(
-            new GPoint(p1.x + m1.x, p1.y + m1.y)
-        );
+function bezierTangent(bezier)
+{
+    var m1x = bezier.c.x / 2;
+    var m1y = bezier.c.y / 2;
 
-        var end = projection.fromPointToLatLng(
-            new GPoint(p1.x + m2.x, p1.y + m2.y)
-        );
+    var m2x = (bezier.c.x + bezier.e.x) / 2;
+    var m2y = (bezier.c.y + bezier.e.y) / 2;
 
-        addArrow(start, end);
-    }
+    var m1 = new GPoint(bezier.p1.x + m1x, bezier.p1.y + m1y);
+    var m2 = new GPoint(bezier.p1.x + m2x, bezier.p1.y + m2y);
 
-    return ('M 0,0 q' + ' ' + c.x + ',' + c.y + ' ' + e.x + ',' + e.y);
+    var p1 = bezier.projection.fromPointToLatLng(m1);
+    var p2 = bezier.projection.fromPointToLatLng(m2);
+
+    return [p1, p2];
+}
+
+function bezierToSvg(bezier)
+{
+    return ('M 0,0 q '
+        + bezier.c.x + ',' + bezier.c.y + ' '
+        + bezier.e.x + ',' + bezier.e.y
+    );
 }
 
 function calcCurvature(start, end)
