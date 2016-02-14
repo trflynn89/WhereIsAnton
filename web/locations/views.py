@@ -54,7 +54,7 @@ class Locations(View):
         distance = self._distance(lastLocation, currLocation)
 
         if distance < Locations.MIN_UPDATE_DISTANCE:
-            return HttpResponseBadRequest('Distance = %.2f' % (distance))
+            return HttpResponseBadRequest('Too close to last update (%.2f mi)' % (distance))
 
         currLocation.put()
         return HttpResponse()
