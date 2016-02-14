@@ -35,13 +35,14 @@ class Drunk(View):
         drunk = request.POST.get('drunk')
 
         if not drunk:
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest('Need drunk field')
 
         isDrunk = (drunk == 1) or (drunk == '1')
         last = Drunks.GetLastDrunk()
 
         if last and (last.drunk == isDrunk):
-            return HttpResponseBadRequest()
+            status = 'drunk' if isDrunk else 'sober'
+            return HttpResponseBadRequest('You are already %s' % (status))
 
         if time:
             Drunks(

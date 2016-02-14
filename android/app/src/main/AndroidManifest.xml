@@ -11,6 +11,14 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <!--
+        Create res/values/api_keys.xml with Google Maps API key. Template:
+
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">YOUR_KEY_HERE</string>
+        </resources>
+         -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />

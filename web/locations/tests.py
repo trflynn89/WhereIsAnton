@@ -12,5 +12,12 @@ boston = {
     'longitude': -71.0589
 }
 
-r = requests.post('http://localhost:8080/locations/', data=boston)
+quincy = {
+    'address': 'Quincy, MA, USA',
+    'latitude': 42.2500,
+    'longitude': -71.0000
+}
+
+r = requests.post('http://localhost:8080/locations/', data=quincy)
 print r.status_code
+print r.content

@@ -11,32 +11,40 @@
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-         />
+        android:layout_height="wrap_content" />
 
     <Button
         android:text="Publish location"
-        android:layout_width="match_parent"
+        android:layout_width="360dp"
         android:layout_height="48dp"
         android:padding="4dp"
         android:id="@+id/button"
-        android:onClick="onClick"/>
+        android:onClick="onLocation"
+        android:layout_gravity="center|top" />
 
-    <Button
-        android:text="I'm drunk"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="50dp"
-        android:padding="4dp"
-        android:id="@+id/drunk"
-        android:onClick="onDrunk"/>
+        android:layout_height="match_parent"
+        android:gravity="center">
 
-    <Button
-        android:text="I'm sober"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="100dp"
-        android:padding="4dp"
-        android:id="@+id/sober"
-        android:onClick="onSober"/>
+        <Button
+            android:text="I'm drunk"
+            android:layout_width="180dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="50dp"
+            android:padding="4dp"
+            android:id="@+id/drunk"
+            android:onClick="onDrunk"
+            android:layout_gravity="left|top" />
+
+        <Button
+            android:text="I'm sober"
+            android:layout_width="180dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="50dp"
+            android:padding="4dp"
+            android:id="@+id/sober"
+            android:onClick="onSober"
+            android:layout_gravity="right|top" />
+    </LinearLayout>
 </FrameLayout>
