@@ -6,12 +6,15 @@ class Drunks(db.Model):
     drunk = db.BooleanProperty()
 
     @staticmethod
-    def GetAllDrunks(limit):
-        query = db.GqlQuery('SELECT * FROM Drunks ORDER BY time DESC')
+    def GetAllDrunks(limit, ancestor=None):
+        if ancestor:
+            query = db.GqlQuery('SELECT * FROM Drunks WHERE ANCESTOR IS :1 ORDER BY time DESC', ancestor)
+        else:
+            query = db.GqlQuery('SELECT * FROM Drunks ORDER BY time DESC')
+
         return query.fetch(limit)
 
     @staticmethod
     def GetLastDrunk():
         query = db.GqlQuery('SELECT * FROM Drunks ORDER BY time DESC')
         return query.get()
-

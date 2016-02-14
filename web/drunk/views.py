@@ -9,14 +9,18 @@ from models import Drunks
 
 class Drunk(View):
 
+    SECONDS_PER_HOUR = 60.0 ** 2
+    DRUNK_TIMEOUT = 10.0
+
     def get(self, request, *args, **kwargs):
+        last = self._getLastDrunk()
         drunks = list()
 
         try:
             limit = request.GET.get('limit');
             limit = int(limit) if limit else None
 
-            for d in Drunks.GetAllDrunks(limit):
+            for d in Drunks.GetAllDrunks(limit, last):
                 drunk = dict()
 
                 drunk['time'] = d.time.isoformat()
@@ -38,7 +42,7 @@ class Drunk(View):
             return HttpResponseBadRequest('Need drunk field')
 
         isDrunk = (drunk == 1) or (drunk == '1')
-        last = Drunks.GetLastDrunk()
+        last = self._getLastDrunk()
 
         if last and (last.drunk == isDrunk):
             status = 'drunk' if isDrunk else 'sober'
@@ -55,6 +59,24 @@ class Drunk(View):
             ).put()
 
         return HttpResponse()
+
+    def _getLastDrunk(self):
+        last = Drunks.GetLastDrunk()
+
+        if last and last.drunk:
+            currTime = datetime.datetime.now()
+            drunkTime = last.time
+
+            diff = currTime - drunkTime
+            hours = diff.total_seconds() / Drunk.SECONDS_PER_HOUR
+
+            if hours > Drunk.DRUNK_TIMEOUT:
+                soberTime = drunkTime + datetime.timedelta(hours=Drunk.DRUNK_TIMEOUT)
+
+                last = Drunks(time=soberTime, drunk=False)
+                last.put()
+
+        return last
 
     def _convertEpoch(self, time):
         return datetime.datetime.fromtimestamp(float(time) / 1000.0)

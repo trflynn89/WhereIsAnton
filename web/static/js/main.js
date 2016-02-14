@@ -2,7 +2,6 @@ var s_map = null;
 var s_markers = [];
 var s_paths = [];
 
-var s_drunkTimeout = 10;
 var s_maxZoom = 5;
 
 var MILLIS_PER_HOUR = 1000 * 60 * 60;
@@ -158,15 +157,6 @@ function getDrunks()
     }, showDrunks);
 }
 
-function createDrunk(time, isDrunk)
-{
-    postAPI('/drunk/',
-    {
-        time: time,
-        drunk: isDrunk
-    }, null);
-}
-
 function timeComparator(a, b)
 {
     if (a['time'] < b['time'])
@@ -222,15 +212,6 @@ function showDrunks(drunks)
     var cTime = new Date().getTime();
 
     var hours = Math.ceil((cTime - dTime) / MILLIS_PER_HOUR);
-
-    if (isDrunk && (hours > s_drunkTimeout))
-    {
-        sTime = dTime + (s_drunkTimeout * MILLIS_PER_HOUR);
-        createDrunk(sTime, false);
-
-        hours = Math.ceil((cTime - sTime) / MILLIS_PER_HOUR);
-        isDrunk = false;
-    }
 
     var answer = (isDrunk ? 'Yes!' : 'Nope!');
     var status = (isDrunk ? ' drunk ' : ' sober ');
