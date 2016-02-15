@@ -14,6 +14,7 @@ class Locations(View):
 
     def get(self, request, *args, **kwargs):
         locations = list()
+        exception = None
 
         try:
             limit = request.GET.get('limit');
@@ -28,11 +29,11 @@ class Locations(View):
                 location['longitude'] = loc.longitude
 
                 locations.append(location)
-        except:
-            pass
+        except Exception as ex:
+            exception = str(ex)
 
         return HttpResponse(
-            json.dumps({ 'data': locations }),
+            json.dumps({ 'data': locations, 'exception': exception }),
             content_type='application/json')
 
     def post(self, request, *args, **kwargs):

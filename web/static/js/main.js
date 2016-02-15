@@ -481,6 +481,11 @@ function getAPI(uri, data, onResponse)
 
     $.get(uri, data, function(data)
     {
+        if (data.exception !== null)
+        {
+            console.log('Exception raised: ' + data.exception);
+        }
+
         if (onResponse !== null)
         {
             onResponse(data.data);

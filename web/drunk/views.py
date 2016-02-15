@@ -14,7 +14,9 @@ class Drunk(View):
 
     def get(self, request, *args, **kwargs):
         last = self._getLastDrunk()
+
         drunks = list()
+        exception = None
 
         try:
             limit = request.GET.get('limit');
@@ -27,11 +29,11 @@ class Drunk(View):
                 drunk['drunk'] = d.drunk
 
                 drunks.append(drunk)
-        except:
-            pass
+        except Exception as ex:
+            exception = str(ex)
 
         return HttpResponse(
-            json.dumps({ 'data': drunks }),
+            json.dumps({ 'data': drunks, 'exception': exception }),
             content_type='application/json')
 
     def post(self, request, *args, **kwargs):
