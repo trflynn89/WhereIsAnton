@@ -3,13 +3,15 @@ import os
 from django.shortcuts import render_to_response
 from django.views.generic import View
 
+from update.views import Update
+
 NAME = 'Anton'
 
 class Home(View):
 
     def get(self, request, *args, **kwargs):
+        version = Update.GetCurrentVersion()
         url = self._formUrl()
-        version = self._getVersion()
 
         show = request.GET.get('show')
 
@@ -28,14 +30,6 @@ class Home(View):
 
         if proto and host and uri:
             return  '%s://%s%s' % (proto, host, uri)
-
-        return None
-
-    def _getVersion(self):
-        version = self._getEnv('CURRENT_VERSION_ID')
-
-        if version:
-            return version.split('.')[0]
 
         return None
 
