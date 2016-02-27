@@ -24,6 +24,19 @@ public class ApiManager
         m_sending = false;
     }
 
+    public void checkForUpdate(String currentVersion)
+    {
+        if (m_sending)
+        {
+            Toast toast = Toast.makeText(m_context, "Couldn't check for updates, will try later", Toast.LENGTH_SHORT);
+            toast.show();
+        }
+        else
+        {
+            new UpdateTask().execute(currentVersion);
+        }
+    }
+
     public void locationUpdate(String address, String latitude, String longitude)
     {
         if (m_sending)
@@ -59,6 +72,24 @@ public class ApiManager
         {
             m_responseCode = responseCode;
             m_responseText = responseText;
+        }
+    }
+
+    protected class UpdateTask extends AsyncTask<String, String, TaskResult>
+    {
+        protected TaskResult doInBackground(String ...data)
+        {
+            Log.i(Constants.S_TAG, "Checking version: '" + data[0] + "'");
+
+            Map<String, String> params = new LinkedHashMap<>();
+            params.put("version", data[0]);
+
+            return makeHttpPost(Constants.S_UPDATE_URL, params);
+        }
+
+        @Override
+        protected void onPostExecute(TaskResult result)
+        {
         }
     }
 

@@ -34,9 +34,11 @@ from django.views.decorators.csrf import csrf_exempt
 from home.views import Home
 from drunk.views import Drunk
 from locations.views import Locations
+from update.views import Update
 
 urlpatterns = [
     url(r'^$', Home.as_view()),
     url(r'^drunk/$', csrf_exempt(Drunk.as_view())),
     url(r'^locations/$', csrf_exempt(Locations.as_view())),
+    url(r'^update/$', csrf_exempt(Update.as_view())),
 ]

@@ -7,5 +7,7 @@ public class Constants
 
     public static final String S_LOCATION_URL = S_HOME_URL + "/locations/";
     public static final String S_DRUNK_URL = S_HOME_URL + "/drunk/";
+    public static final String S_UPDATE_URL = S_HOME_URL + "/update/";
+
     public static final String S_TAG = "whereisanton";
 }

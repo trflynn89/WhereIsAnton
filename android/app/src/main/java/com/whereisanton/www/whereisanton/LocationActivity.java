@@ -1,6 +1,8 @@
 package com.whereisanton.www.whereisanton;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
@@ -33,7 +35,7 @@ public class LocationActivity
     private GoogleMap m_map;
     private Button m_button;
 
-    private LocationManager m_manager;
+    private LocationManager m_locationManager;
     private String m_provider;
 
     private Location m_lastLocation = null;
@@ -62,10 +64,10 @@ public class LocationActivity
     {
         super.onPause();
 
-        if (m_manager != null)
+        if (m_locationManager != null)
         {
             Log.i(Constants.S_TAG, "Stopping location updates");
-            m_manager.removeUpdates(this);
+            m_locationManager.removeUpdates(this);
         }
     }
 
@@ -74,10 +76,26 @@ public class LocationActivity
     {
         super.onResume();
 
-        if (m_manager != null)
+        if (m_apiManager != null)
+        {
+            final PackageManager manager = getPackageManager();
+            final String packageName = getPackageName();
+
+            try
+            {
+                final PackageInfo version = manager.getPackageInfo(packageName, 0);
+                m_apiManager.checkForUpdate(version.versionName);
+            }
+            catch (PackageManager.NameNotFoundException e)
+            {
+                Log.e(Constants.S_TAG, e.getMessage());
+            }
+        }
+
+        if (m_locationManager != null)
         {
             Log.i(Constants.S_TAG, "Resuming location updates");
-            m_manager.requestLocationUpdates(m_provider, 20000, 0.0f, this);
+            m_locationManager.requestLocationUpdates(m_provider, 20000, 0.0f, this);
         }
     }
 
@@ -89,15 +107,15 @@ public class LocationActivity
         m_map = googleMap;
         m_map.setMyLocationEnabled(true);
 
-        m_manager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        m_locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         Criteria criteria = new Criteria();
 
-        m_provider = m_manager.getBestProvider(criteria, true);
+        m_provider = m_locationManager.getBestProvider(criteria, true);
 
-        Location location = m_manager.getLastKnownLocation(m_provider);
+        Location location = m_locationManager.getLastKnownLocation(m_provider);
         onLocationChanged(location);
 
-        m_manager.requestLocationUpdates(m_provider, 20000, 0.0f, this);
+        m_locationManager.requestLocationUpdates(m_provider, 20000, 0.0f, this);
     }
 
     @Override
