@@ -14,6 +14,7 @@ class Locations(View):
 
     def get(self, request, *args, **kwargs):
         locations = list()
+        coordDict = dict()
         exception = None
 
         try:
@@ -25,10 +26,17 @@ class Locations(View):
 
                 location['time'] = loc.time.isoformat()
                 location['address'] = loc.address
-                location['latitude'] = loc.latitude
-                location['longitude'] = loc.longitude
 
+                if loc.address not in coordDict:
+                    coordDict[loc.address] = {
+                        'latitude' : loc.latitude,
+                        'longitude' : loc.longitude
+                    }
+
+                location['latitude'] = coordDict[loc.address]['latitude']
+                location['longitude'] = coordDict[loc.address]['longitude']
                 locations.append(location)
+
         except Exception as ex:
             exception = str(ex)
 
@@ -52,10 +60,11 @@ class Locations(View):
             longitude=float(longitude)
         )
 
-        distance = self._distance(lastLocation, currLocation)
+        if lastLocation:
+            distance = self._distance(lastLocation, currLocation)
 
-        if distance < Locations.MIN_UPDATE_DISTANCE:
-            return HttpResponseBadRequest('Too close to last update (%.2f mi)' % (distance))
+            if distance < Locations.MIN_UPDATE_DISTANCE:
+                return HttpResponseBadRequest('Too close to last update (%.2f mi)' % (distance))
 
         currLocation.put()
         return HttpResponse()

@@ -7,13 +7,13 @@ australia = {
 }
 
 boston = {
-    'address': 'Boston, MA, USA',
+    'address': 'Boston, MA',
     'latitude': 42.3601,
     'longitude': -71.0589
 }
 
 quincy = {
-    'address': 'Quincy, MA, USA',
+    'address': 'Quincy, MA',
     'latitude': 42.2500,
     'longitude': -71.0000
 }
