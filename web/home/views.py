@@ -13,13 +13,11 @@ class Home(View):
         version = Update.GetCurrentVersion()
         url = self._formUrl()
 
-        show = request.GET.get('show')
-
         return render_to_response('home.html',
             {
                 'url': url,
                 'name': NAME,
-                'show': show,
+                'params': request.GET,
                 'version': version
             })
 

@@ -25,9 +25,10 @@
 				<ul>
 					<li><a href="#" onclick="getLocations(false);" id="curr-link" class="skel-layers-ignoreHref"><span class="icon fa-map-marker">Current Location</span></a></li>
 					<li><a href="#" onclick="getLocations(true);" id="all-link" class="skel-layers-ignoreHref"><span class="icon fa-map">All Locations</span></a></li>
+					<li><a href="#" onclick="getClusters();" id="all-link" class="skel-layers-ignoreHref"><span class="icon fa-dot-circle-o">Clustered Locations</span></a></li>
 					<li><a href="#" onclick="getDrunks();" id="noactive-drunk-link" class="skel-layers-ignoreHref"><span class="icon fa-beer">Is {{ name }} Drunk?</span></a></li>
 
-					<li><a href="http://timothy-flynn.com" target="_blank" id="noactive-contact-link" class="skel-layers-ignoreHref"><span class="icon fa-envelope">Created by Tim Flynn</span></a></li>
+					<li><a href="http://timothy-flynn.com" target="_blank" id="noactive-contact-link" class="skel-layers-ignoreHref"><span class="icon fa-envelope">Made by Tim Flynn</span></a></li>
 					{% if url %}
 					<li><a href="https://facebook.com/sharer.php?u={{ url }}" target="_blank" id="noactive-facebook-link" class="skel-layers-ignoreHref"><span class="icon fa-facebook">Share on Facebook</span></a></li>
 					{% endif %}
@@ -47,6 +48,7 @@
 	<script type="text/javascript" src="/static/js/jquery.scrollzer.min.js"></script>
 	<script type="text/javascript" src="/static/js/lobibox.min.js"></script>
 	<script type="text/javascript" src="/static/js/skel.min.js"></script>
+	<script type="text/javascript" src="/static/js/kmpp.min.js"></script>
 	<script type="text/javascript" src="/static/js/util.js?ver={{ version }}"></script>
 	<script type="text/javascript" src="/static/js/main.min.js?ver={{ version }}"></script>
 	<script type="text/javascript" src="/static/js/map.min.js?ver={{ version }}"></script>
@@ -59,7 +61,20 @@
 
 		function dataToShow()
 		{
-			return "{{ show }}";
+		{% if params.show %}
+			return "{{ params.show }}";
+		{% else %}
+			return "";
+		{% endif %}
+		}
+
+		function clusterSize()
+		{
+		{% if params.k %}
+			return {{ params.k }};
+		{% else %}
+			return -1;
+		{% endif %}
 		}
 	</script>
 

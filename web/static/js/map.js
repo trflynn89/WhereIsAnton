@@ -1,14 +1,18 @@
 var s_map = null;
+var s_kmpp = null;
 var s_markers = [];
+var s_centroids = [];
 var s_paths = [];
 
 var s_maxZoom = 5;
 
 var MILLIS_PER_HOUR = 1000 * 60 * 60;
 var METERS_PER_MILE = 1609.34;
+var MIN_CLUSTERS = 3;
 
 var GMap = google.maps.Map;
 var GPoint = google.maps.Point;
+var GCircle = google.maps.Circle;
 var GMarker = google.maps.Marker;
 var GPolyline = google.maps.Polyline;
 var GSymbolPath = google.maps.SymbolPath;
@@ -19,7 +23,8 @@ var GInfoWindow = google.maps.InfoWindow;
 var GDistance = google.maps.geometry.spherical.computeDistanceBetween;
 var GEvent = google.maps.event;
 
-var s_style = [
+var s_style =
+[
     {
         featureType: 'administrative',
         elementType: 'labels.text.fill',
@@ -122,7 +127,10 @@ $(document).ready(function(event)
     s_map.mapTypes.set('s_style', new GStyledMapType(s_style));
     s_map.setMapTypeId('s_style');
 
+    s_kmpp = new kmpp();
+
     GEvent.addListener(s_map, 'zoom_changed', updatePaths);
+    GEvent.addListener(s_map, 'zoom_changed', updateCentroids);
 
     var data = dataToShow();
 
@@ -134,6 +142,10 @@ $(document).ready(function(event)
     else if (data === "history")
     {
         getLocations(true);
+    }
+    else if (data == "cluster")
+    {
+        getClusters();
     }
     else
     {
@@ -147,6 +159,14 @@ function getLocations(showAll)
     {
         limit: showAll ? null : 1
     }, showLocations);
+}
+
+function getClusters()
+{
+    getAPI('/locations/',
+    {
+        limit: null
+    }, showClusters);
 }
 
 function getDrunks()
@@ -192,6 +212,85 @@ function showLocations(locations)
     drawPaths();
 }
 
+function showClusters(locations)
+{
+    locations.sort(timeComparator);
+    clearMap();
+
+    var bounds = new GLatLngBounds();
+    var k = clusterSize();
+    var items = [];
+
+    for (var i = 0; i < locations.length; ++i)
+    {
+        var lat = locations[i]['latitude'];
+        var lng = locations[i]['longitude'];
+
+        var latlng = addMarker(lat, lng, null, null);
+        bounds.extend(latlng);
+
+        items[i] = { x: lng, y: lat };
+    }
+
+    fitBounds(bounds);
+
+    s_kmpp.reset();
+    s_kmpp.setPoints(items);
+
+    if (k === -1)
+    {
+        s_kmpp.guessK();
+        s_kmpp.k = Math.max(s_kmpp.k, MIN_CLUSTERS);
+    }
+    else
+    {
+        s_kmpp.k = k;
+        s_kmpp.k = Math.max(s_kmpp.k, 1);
+    }
+
+    s_kmpp.initCentroids();
+    s_kmpp.cluster();
+
+    for (var i = 0; i < s_kmpp.centroids.length; ++i)
+    {
+        var centroid = s_kmpp.centroids[i];
+
+        s_centroids[i] = new google.maps.Circle(
+        {
+            center: { lat: centroid.y, lng: centroid.x },
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#FF0000',
+            fillOpacity: 0.35,
+            map: s_map
+        });
+    }
+
+    updateCentroids();
+}
+
+function updateCentroids()
+{
+    var zoom = s_map.getZoom();
+    var radius = 3000000;
+
+    if (zoom > 0)
+    {
+        radius *= 1 / zoom;
+    }
+
+    for (var i = 0; i < s_centroids.length; ++i)
+    {
+        var percent = s_kmpp.centroids[i].items / s_markers.length;
+
+        s_centroids[i].setOptions(
+        {
+            radius: percent / 0.5 * radius
+        });
+    }
+}
+
 function showDrunks(drunks)
 {
     var name = getName();
@@ -234,6 +333,12 @@ function clearMap()
     {
         s_markers[i].setMap(null);
     }
+
+    for (var i = 0; i < s_centroids.length; ++i)
+    {
+        s_centroids[i].setMap(null);
+    }
+
     for (var i = 0; i < s_paths.length; ++i)
     {
         s_paths[i].arrow.setMap(null);
@@ -241,19 +346,21 @@ function clearMap()
     }
 
     s_markers = [];
+    s_centroids = [];
     s_paths = [];
 }
 
-function addMarker(lat, lng, label)
+function addMarker(lat, lng, label, mapOverride)
 {
     var latlng = new GLatLng(lat, lng);
+    var map = (mapOverride === undefined ? s_map : mapOverride);
 
     var marker = new GMarker(
     {
         position: latlng,
         optimized: false,
         zIndex: 1,
-        map: s_map
+        map: map
     });
 
     for (var i = 0; i < s_markers.length; ++i)
@@ -275,7 +382,7 @@ function labelMarker(marker, message)
 {
     var map = marker.getMap();
 
-    if ((map !== null) && (message !== undefined))
+    if ((map !== null) && (message !== undefined) && (message !== null))
     {
         var infowindow = new GInfoWindow(
         {
