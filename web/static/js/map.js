@@ -1,12 +1,12 @@
 var s_map = null;
-var s_kmpp = null;
 var s_markers = [];
+var s_clusters = [];
 var s_centroids = [];
 var s_paths = [];
 
 var MILLIS_PER_HOUR = 1000 * 60 * 60;
 var METERS_PER_MILE = 1609.34;
-var MIN_CLUSTERS = 3;
+var MIN_CLUSTERS = 4;
 var MAX_ZOOM = 5;
 
 var GMap = google.maps.Map;
@@ -126,8 +126,6 @@ $(document).ready(function(event)
     s_map.mapTypes.set('s_style', new GStyledMapType(s_style));
     s_map.setMapTypeId('s_style');
 
-    s_kmpp = new kmpp();
-
     GEvent.addListener(s_map, 'zoom_changed', updatePaths);
     GEvent.addListener(s_map, 'zoom_changed', updateCentroids);
 
@@ -151,6 +149,23 @@ $(document).ready(function(event)
         getLocations(false);
     }
 });
+
+function median(arr)
+{
+    arr.sort(function(a, b)
+    {
+        return a - b;
+    });
+
+    var mid = Math.floor(arr.length / 2);
+
+    if ((arr.length % 2) == 0)
+    {
+        return (arr[mid - 1] + arr[mid]) / 2.0;
+    }
+
+    return arr[mid];
+}
 
 function getLocations(showAll)
 {
@@ -218,7 +233,6 @@ function showClusters(locations)
 
     var k = clusterSize();
     var coords = [];
-    var items = [];
 
     for (var i = 0; i < locations.length; ++i)
     {
@@ -226,36 +240,24 @@ function showClusters(locations)
         var lng = locations[i]['longitude'];
 
         var latlng = new GLatLng(lat, lng);
-        items[i] = { x: lng, y: lat };
         coords[i] = latlng;
     }
 
     fitCoordinates(coords);
 
-    s_kmpp.reset();
-    s_kmpp.setPoints(items);
-
-    if (k === -1)
+    if (k < 1)
     {
-        s_kmpp.guessK();
-        s_kmpp.k = Math.max(s_kmpp.k, MIN_CLUSTERS);
-    }
-    else
-    {
-        s_kmpp.k = k;
-        s_kmpp.k = Math.max(s_kmpp.k, 1);
+        k = Math.floor(Math.sqrt(coords.length / 2));
+        k = Math.max(k, MIN_CLUSTERS);
     }
 
-    s_kmpp.initCentroids();
-    s_kmpp.cluster();
+    s_clusters = kmedian(coords, k);
 
-    for (var i = 0; i < s_kmpp.centroids.length; ++i)
+    for (var i = 0; i < s_clusters.centroids.length; ++i)
     {
-        var centroid = s_kmpp.centroids[i];
-
         s_centroids[i] = new google.maps.Circle(
         {
-            center: { lat: centroid.y, lng: centroid.x },
+            center: s_clusters.centroids[i],
             strokeColor: '#FF0000',
             strokeOpacity: 0.8,
             strokeWeight: 2,
@@ -280,7 +282,12 @@ function updateCentroids()
 
     for (var i = 0; i < s_centroids.length; ++i)
     {
-        var percent = s_kmpp.centroids[i].items / s_kmpp.points.length;
+        var numPoints = s_clusters.counts.reduce(function(a, b)
+        {
+            return a + b;
+        });
+
+        var percent = s_clusters.counts[i] / numPoints;
         percent = Math.max(percent, 0.25);
 
         s_centroids[i].setOptions(
@@ -584,6 +591,139 @@ function arePathsSimilar(p1Start, p1End, p2Start, p2End)
     var d4 = GDistance(p1End, p2Start) / METERS_PER_MILE;
 
     return (((d1 < 100) && (d2 < 100)) || ((d3 < 100) && (d4 < 100)));
+}
+
+function kmedian(coords, k)
+{
+    var centroids = computeCentroids(coords, k);
+    var attached = new Array(coords.length);
+    var counts = new Array(k);
+    var converged = false;
+
+    for (var i = 0; i < coords.length; ++i)
+    {
+        attached[i] = -1;
+    }
+    for (var i = 0; i < k; ++i)
+    {
+        counts[i] = 0;
+    }
+
+    while (!converged)
+    {
+        var data = new Array(k);
+        converged = true;
+
+        for (var i = 0; i < k; ++i)
+        {
+            data[i] = { count: 0, lats: [], lngs: [] };
+        }
+
+        for (var i = 0; i < coords.length; ++i)
+        {
+            var centroid = 0;
+
+            // Select the centroid closest to this point
+            var minDistance = GDistance(centroids[0], coords[i]);
+
+            for (var j = 1; j < k; ++j)
+            {
+                var distance = GDistance(centroids[j], coords[i]);
+
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    centroid = j;
+                }
+            }
+
+            // Check if centroids coverged and assign centroid to this point
+            converged &= (attached[i] === centroid);
+            attached[i] = centroid;
+
+            // Add coordinates to centroid's meta data
+            data[centroid].lats.push(coords[i].lat());
+            data[centroid].lngs.push(coords[i].lng());
+            ++data[centroid].count;
+        }
+
+        // Move each centroid to the median of its contained coordinates
+        for (var i = 0; i < k; ++i)
+        {
+            if ((counts[i] = data[i].count) > 0)
+            {
+                var lat = median(data[i].lats);
+                var lng = median(data[i].lngs);
+                centroids[i] = new GLatLng(lat, lng);
+            }
+        }
+    }
+
+    return {
+        centroids: centroids,
+        counts: counts
+    };
+}
+
+function computeCentroids(coords, k)
+{
+    var centroids = new Array(k);
+
+    var data = new Array(coords.length);
+    var totalProbability = 0;
+
+    // 1. Choose one center uniformly at random from among the data points
+    var centroid = coords[Math.floor(Math.random() * coords.length)];
+    centroids[0] = centroid;
+
+    // 2. For each data point x, compute D(x), the distance between x and the
+    //    nearest center that has already been chosen
+    for (var i = 0; i < coords.length; ++i)
+    {
+        var distance = GDistance(centroid, coords[i]);
+        totalProbability += Math.pow(distance, 2);
+
+        data[i] = {
+            probability: totalProbability,
+            distance: distance
+        };
+    }
+
+    // 3. Choose one new data point at random as a new center, using a weighted
+    //    probability distribution where a point x is chosen with probability
+    //    proportional to D(x)^2
+    // 4. Repeat Steps 2 and 3 until k centers have been chosen
+    for (var i = 1; i < centroids.length; ++i)
+    {
+        var random = Math.floor(Math.random() * totalProbability);
+
+        for (centroid = 0; centroid < coords.length; ++centroid)
+        {
+            if (random < data[centroid].probability)
+            {
+                break;
+            }
+        }
+
+        for (var j = 0, totalProbability = 0; j < coords.length; ++j)
+        {
+            var distance = GDistance(coords[centroid], coords[j]);
+
+            if (distance < data[j].distance)
+            {
+                totalProbability += Math.pow(distance, 2);
+
+                data[j] = {
+                    probability: totalProbability,
+                    distance: distance
+                };
+            }
+        }
+
+        centroids[i] = coords[centroid];
+    }
+
+    return centroids;
 }
 
 function getAPI(uri, data, onResponse)

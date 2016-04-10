@@ -48,7 +48,6 @@
 	<script type="text/javascript" src="/static/js/jquery.scrollzer.min.js"></script>
 	<script type="text/javascript" src="/static/js/lobibox.min.js"></script>
 	<script type="text/javascript" src="/static/js/skel.min.js"></script>
-	<script type="text/javascript" src="/static/js/kmpp.min.js"></script>
 	<script type="text/javascript" src="/static/js/util.js?ver={{ version }}"></script>
 	<script type="text/javascript" src="/static/js/main.min.js?ver={{ version }}"></script>
 	<script type="text/javascript" src="/static/js/map.min.js?ver={{ version }}"></script>
@@ -70,11 +69,17 @@
 
 		function clusterSize()
 		{
-		{% if params.k %}
-			return {{ params.k }};
-		{% else %}
+			try
+			{
+				{% if params.k %}
+				return {{ params.k }};
+				{% endif %}
+			}
+			catch(err)
+			{
+			}
+
 			return -1;
-		{% endif %}
 		}
 	</script>
 
