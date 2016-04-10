@@ -11,8 +11,8 @@ var MAX_ZOOM = 5;
 
 var GMap = google.maps.Map;
 var GPoint = google.maps.Point;
-var GCircle = google.maps.Circle;
 var GMarker = google.maps.Marker;
+var GPolygon = google.maps.Polygon;
 var GPolyline = google.maps.Polyline;
 var GSymbolPath = google.maps.SymbolPath;
 var GLatLng = google.maps.LatLng;
@@ -231,7 +231,6 @@ function showClusters(locations)
     locations.sort(timeComparator);
     clearMap();
 
-    var k = clusterSize();
     var coords = [];
 
     for (var i = 0; i < locations.length; ++i)
@@ -244,57 +243,7 @@ function showClusters(locations)
     }
 
     fitCoordinates(coords);
-
-    if (k < 1)
-    {
-        k = Math.floor(Math.sqrt(coords.length / 2));
-        k = Math.max(k, MIN_CLUSTERS);
-    }
-
-    s_clusters = kmedian(coords, k);
-
-    for (var i = 0; i < s_clusters.centroids.length; ++i)
-    {
-        s_centroids[i] = new google.maps.Circle(
-        {
-            center: s_clusters.centroids[i],
-            strokeColor: '#FF0000',
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-            fillColor: '#FF0000',
-            fillOpacity: 0.35,
-            map: s_map
-        });
-    }
-
-    updateCentroids();
-}
-
-function updateCentroids()
-{
-    var zoom = s_map.getZoom();
-    var radius = 4000000;
-
-    if (zoom > 0)
-    {
-        radius *= 1 / zoom;
-    }
-
-    for (var i = 0; i < s_centroids.length; ++i)
-    {
-        var numPoints = s_clusters.counts.reduce(function(a, b)
-        {
-            return a + b;
-        });
-
-        var percent = s_clusters.counts[i] / numPoints;
-        percent = Math.max(percent, 0.25);
-
-        s_centroids[i].setOptions(
-        {
-            radius: percent * radius
-        });
-    }
+    drawCentroids(coords);
 }
 
 function showDrunks(drunks)
@@ -591,6 +540,85 @@ function arePathsSimilar(p1Start, p1End, p2Start, p2End)
     var d4 = GDistance(p1End, p2Start) / METERS_PER_MILE;
 
     return (((d1 < 100) && (d2 < 100)) || ((d3 < 100) && (d4 < 100)));
+}
+
+function drawCentroids(coords)
+{
+    var k = clusterSize();
+
+    if (k < 1)
+    {
+        k = Math.floor(Math.sqrt(coords.length / 2));
+        k = Math.max(k, MIN_CLUSTERS);
+    }
+
+    s_clusters = kmedian(coords, k);
+
+    for (var i = 0; i < s_clusters.centroids.length; ++i)
+    {
+        s_centroids[i] = new GPolygon(
+        {
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#FF0000',
+            fillOpacity: 0.35,
+            map: s_map
+        });
+    }
+
+    updateCentroids();
+}
+
+function updateCentroids()
+{
+    var zoom = s_map.getZoom();
+    var radius = 50;
+
+    if (zoom > 0)
+    {
+        radius *= 1 / zoom;
+    }
+
+    for (var i = 0; i < s_centroids.length; ++i)
+    {
+        var numPoints = s_clusters.counts.reduce(function(a, b)
+        {
+            return a + b;
+        });
+
+        var percent = s_clusters.counts[i] / numPoints;
+        percent = Math.max(percent, 0.25);
+
+        s_centroids[i].setOptions(
+        {
+            path: drawCircle(s_clusters.centroids[i], percent * radius)
+        });
+    }
+}
+
+function drawCircle(center, radius)
+{
+    var projection = s_map.getProjection();
+    var circle = new Array();
+
+    if (projection === undefined)
+    {
+        return circle;
+    }
+
+    var point = projection.fromLatLngToPoint(center);
+
+    for (var i = 0; i < 360; i += 10)
+    {
+        var dx = radius * Math.cos(i * Math.PI / 180);
+        var dy = radius * Math.sin(i * Math.PI / 180);
+
+        var dPoint = new GPoint(point.x + dx, point.y + dy);
+        circle.push(projection.fromPointToLatLng(dPoint));
+    }
+
+    return circle;
 }
 
 function kmedian(coords, k)
