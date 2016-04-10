@@ -4,11 +4,10 @@ var s_markers = [];
 var s_centroids = [];
 var s_paths = [];
 
-var s_maxZoom = 5;
-
 var MILLIS_PER_HOUR = 1000 * 60 * 60;
 var METERS_PER_MILE = 1609.34;
 var MIN_CLUSTERS = 3;
+var MAX_ZOOM = 5;
 
 var GMap = google.maps.Map;
 var GPoint = google.maps.Point;
@@ -196,7 +195,7 @@ function showLocations(locations)
     locations.sort(timeComparator);
     clearMap();
 
-    var bounds = new GLatLngBounds();
+    var coords = [];
 
     for (var i = 0; i < locations.length; ++i)
     {
@@ -205,10 +204,10 @@ function showLocations(locations)
         var adr = locations[i]['address'];
 
         var latlng = addMarker(lat, lng, adr);
-        bounds.extend(latlng);
+        coords[i] = latlng;
     }
 
-    fitBounds(bounds);
+    fitCoordinates(coords);
     drawPaths();
 }
 
@@ -217,8 +216,8 @@ function showClusters(locations)
     locations.sort(timeComparator);
     clearMap();
 
-    var bounds = new GLatLngBounds();
     var k = clusterSize();
+    var coords = [];
     var items = [];
 
     for (var i = 0; i < locations.length; ++i)
@@ -226,13 +225,12 @@ function showClusters(locations)
         var lat = locations[i]['latitude'];
         var lng = locations[i]['longitude'];
 
-        var latlng = addMarker(lat, lng, null, null);
-        bounds.extend(latlng);
-
+        var latlng = new GLatLng(lat, lng);
         items[i] = { x: lng, y: lat };
+        coords[i] = latlng;
     }
 
-    fitBounds(bounds);
+    fitCoordinates(coords);
 
     s_kmpp.reset();
     s_kmpp.setPoints(items);
@@ -273,7 +271,7 @@ function showClusters(locations)
 function updateCentroids()
 {
     var zoom = s_map.getZoom();
-    var radius = 3000000;
+    var radius = 4000000;
 
     if (zoom > 0)
     {
@@ -282,11 +280,12 @@ function updateCentroids()
 
     for (var i = 0; i < s_centroids.length; ++i)
     {
-        var percent = s_kmpp.centroids[i].items / s_markers.length;
+        var percent = s_kmpp.centroids[i].items / s_kmpp.points.length;
+        percent = Math.max(percent, 0.25);
 
         s_centroids[i].setOptions(
         {
-            radius: percent / 0.5 * radius
+            radius: percent * radius
         });
     }
 }
@@ -350,17 +349,16 @@ function clearMap()
     s_paths = [];
 }
 
-function addMarker(lat, lng, label, mapOverride)
+function addMarker(lat, lng, label)
 {
     var latlng = new GLatLng(lat, lng);
-    var map = (mapOverride === undefined ? s_map : mapOverride);
 
     var marker = new GMarker(
     {
         position: latlng,
         optimized: false,
         zIndex: 1,
-        map: map
+        map: s_map
     });
 
     for (var i = 0; i < s_markers.length; ++i)
@@ -382,7 +380,7 @@ function labelMarker(marker, message)
 {
     var map = marker.getMap();
 
-    if ((map !== null) && (message !== undefined) && (message !== null))
+    if ((map !== null) && (message !== undefined))
     {
         var infowindow = new GInfoWindow(
         {
@@ -398,15 +396,20 @@ function labelMarker(marker, message)
     }
 }
 
-function fitBounds(bounds)
+function fitCoordinates(bounds)
 {
-    var sw = bounds.getSouthWest();
-    var ne = bounds.getNorthEast();
+    var north = null, south = null, east = null, west = null;
 
-    var north = Math.max(sw.lat(), ne.lat());
-    var south = Math.min(sw.lat(), ne.lat());
-    var east = Math.max(sw.lng(), ne.lng());
-    var west = Math.min(sw.lng(), ne.lng());
+    for (var i = 0; i < bounds.length; ++i)
+    {
+        var lat = bounds[i].lat();
+        var lng = bounds[i].lng();
+
+        north = (north ? Math.max(north, lat) : lat);
+        south = (south ? Math.min(south, lat) : lat);
+        east = (east ? Math.max(east, lng) : lng);
+        west = (west ? Math.min(west, lng) : lng);
+    }
 
     s_map.fitBounds(new GLatLngBounds(
         new GLatLng(south, west),
@@ -465,7 +468,7 @@ function updatePaths()
 
         // FIXME for some reason, the Bezier curves "jump" when the map zoom
         // level is > 5. For now, just hide the curve when zoomed that far.
-        if (zoom > s_maxZoom)
+        if (zoom > MAX_ZOOM)
         {
             path.arrow.setOptions({ icons: null });
         }
