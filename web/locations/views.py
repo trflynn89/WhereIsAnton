@@ -1,3 +1,4 @@
+import datetime
 import json
 import math
 
@@ -45,6 +46,7 @@ class Locations(View):
             content_type='application/json')
 
     def post(self, request, *args, **kwargs):
+        date = request.POST.get('date')
         address = request.POST.get('address')
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
@@ -60,7 +62,16 @@ class Locations(View):
             longitude=float(longitude)
         )
 
-        if lastLocation:
+        if date:
+            fmt = '%Y-%m-%d'
+
+            try:
+                currLocation.time = datetime.datetime.strptime(date, fmt)
+            except Exception as ex:
+                error = 'Expected date of form: %s\nBut received: %s' % (fmt, date)
+                return HttpResponseBadRequest(error)
+
+        elif lastLocation:
             distance = self._distance(lastLocation, currLocation)
 
             if distance < Locations.MIN_UPDATE_DISTANCE:

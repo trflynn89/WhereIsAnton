@@ -1,33 +1,19 @@
 import requests
 
-australia = {
-    'address': 'Sydney, NSW, Australia',
-    'latitude': -34.397,
-    'longitude': 150.644
-}
+HOST = 'http://localhost:8080/locations/'
 
-boston = {
-    'address': 'Boston, MA',
-    'latitude': 42.3601,
-    'longitude': -71.0589
-}
-
-quincy = {
-    'address': 'Quincy, MA',
-    'latitude': 42.2500,
-    'longitude': -71.0000
-}
-
-addrs = [
+ADDRS = [
    {
         'address': 'Somerville, MA',
         'latitude': 42.39933824,
-        'longitude': -71.12802755
+        'longitude': -71.12802755,
+        'date': '2015-03-12'
     },
     {
         'address': 'The Bahamas',
         'latitude': 25.0845025,
-        'longitude':  -77.31942523
+        'longitude':  -77.31942523,
+        'date': '2016-1-2'
     },
     {
         'address': 'Boston, MA',
@@ -181,10 +167,14 @@ addrs = [
     }
 ]
 
-#r = requests.post('http://localhost:8080/locations/', data=quincy)
-#print r.status_code
-#print r.content
+def main():
+    for addr in ADDRS:
+        response = requests.post(HOST, data=addr)
+        print addr['address']
 
-for addr in addrs:
-    r = requests.post('http://localhost:8080/locations/', data=addr)
-    print r.status_code
+        if response.status_code != 200:
+            print response.content
+            break
+
+if __name__ == '__main__':
+    main()
